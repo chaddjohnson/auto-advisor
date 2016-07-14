@@ -97,7 +97,10 @@ for (investmentDivisor=5; investmentDivisor<=20; investmentDivisor++) {
                 //     }
                 // }
 
-                if (positions.length && (dataPoint.close >= targetSellPrice || (days >= 30 && dataPoint.close >= averagePositionCostBasis))) {
+                var targetPriceReached = dataPoint.close >= targetSellPrice;
+                var averageReachedAndHeldTooLong = days >= 30 && dataPoint.close >= averagePositionCostBasis;
+
+                if (positions.length && (targetPriceReached || averageReachedAndHeldTooLong)) {
                     let grossProfit = shareSum * dataPoint.close;
                     let netProfit = grossProfit - costBasisSum;
 
@@ -197,7 +200,10 @@ data.forEach(function(dataPoint) {
 
     days = Math.round((new Date(dataPoint.date) - lastBuyDate) / 24 / 60 / 60 / 1000);
 
-    if (positions.length && (dataPoint.close >= targetSellPrice || (days >= 30 && dataPoint.close >= averagePositionCostBasis))) {
+    var targetPriceReached = dataPoint.close >= targetSellPrice;
+    var averageReachedAndHeldTooLong = days >= 30 && dataPoint.close >= averagePositionCostBasis;
+
+    if (positions.length && (targetPriceReached || averageReachedAndHeldTooLong)) {
         let grossProfit = shareSum * dataPoint.close;
         let netProfit = grossProfit - costBasisSum;
 
