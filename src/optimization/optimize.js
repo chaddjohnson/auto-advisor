@@ -21,6 +21,7 @@ var data = require('../../data/' + symbol + '.json');
 // Settings
 var balance = 100000;
 var startingBalance = balance;
+var commission = 4.95;
 var investmentDivisor;
 var baseInvestment;
 var buyTriggerChangePercentage;
@@ -101,7 +102,7 @@ for (investmentDivisor=5; investmentDivisor<=20; investmentDivisor++) {
                 var averageReachedAndHeldTooLong = days >= 30 && dataPoint.close >= averagePositionCostBasis;
 
                 if (positions.length && (targetPriceReached || averageReachedAndHeldTooLong)) {
-                    let grossProfit = shareSum * dataPoint.close;
+                    let grossProfit = (shareSum * dataPoint.close) - commission;
                     let netProfit = grossProfit - costBasisSum;
 
                     balance += grossProfit;
@@ -139,7 +140,7 @@ for (investmentDivisor=5; investmentDivisor<=20; investmentDivisor++) {
 
                     position.shares = Math.floor(baseInvestment / dataPoint.close);
                     position.pricePerShare = dataPoint.close;
-                    position.costBasis = position.shares * position.pricePerShare;
+                    position.costBasis = (position.shares * position.pricePerShare) + commission;
 
                     // Ensure adding the position will not go beyond the maximum investment amount.
                     if ((position.pricePerShare * position.shares) + currentInvestment <= maxInvestment) {
@@ -204,7 +205,7 @@ data.forEach(function(dataPoint) {
     var averageReachedAndHeldTooLong = days >= 30 && dataPoint.close >= averagePositionCostBasis;
 
     if (positions.length && (targetPriceReached || averageReachedAndHeldTooLong)) {
-        let grossProfit = shareSum * dataPoint.close;
+        let grossProfit = (shareSum * dataPoint.close) - commission;
         let netProfit = grossProfit - costBasisSum;
 
         balance += grossProfit;
@@ -224,7 +225,7 @@ data.forEach(function(dataPoint) {
 
         position.shares = Math.floor(baseInvestment / dataPoint.close);
         position.pricePerShare = dataPoint.close;
-        position.costBasis = position.shares * position.pricePerShare;
+        position.costBasis = (position.shares * position.pricePerShare) + commission;
 
         // Ensure adding the position will not go beyond the maximum investment amount.
         if ((position.pricePerShare * position.shares) + currentInvestment <= maxInvestment) {

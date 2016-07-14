@@ -19,10 +19,11 @@ var data = require('../../data/' + symbol + '.json');
 // Settings
 var balance = 100000;
 var startingBalance = balance;
+var commission = 4.95;
 var investmentDivisor = 6;
 var baseInvestment = startingBalance / investmentDivisor;
-var buyTriggerChangePercentage = -1.6;
-var sellTriggerProfitPercentage = 1.15;
+var buyTriggerChangePercentage = -1.7;
+var sellTriggerProfitPercentage = 1.25;
 var maxInvestment = balance;
 var lastBuyDate = 0;
 var longHoldCount = 0;
@@ -52,7 +53,7 @@ data.forEach(function(dataPoint) {
     days = Math.round((new Date(dataPoint.date) - lastBuyDate) / 24 / 60 / 60 / 1000);
 
     // if (positions.length && dataPoint.high >= (targetSellPrice * 1.01)) {
-    //     let grossProfit = shareSum * (targetSellPrice * 1.01);
+    //     let grossProfit = (shareSum * (targetSellPrice * 1.01)) - commission;
     //     let netProfit = grossProfit - costBasisSum;
 
     //     balance += grossProfit;
@@ -71,7 +72,7 @@ data.forEach(function(dataPoint) {
     var averageReachedAndHeldTooLong = days >= 30 && dataPoint.close >= averagePositionCostBasis;
 
     if (positions.length && (targetPriceReached || averageReachedAndHeldTooLong)) {
-        let grossProfit = shareSum * dataPoint.close;
+        let grossProfit = (shareSum * dataPoint.close) - commission;
         let netProfit = grossProfit - costBasisSum;
 
         balance += grossProfit;
@@ -96,7 +97,7 @@ data.forEach(function(dataPoint) {
 
         position.shares = Math.floor(baseInvestment / dataPoint.close);
         position.pricePerShare = dataPoint.close;
-        position.costBasis = position.shares * position.pricePerShare;
+        position.costBasis = (position.shares * position.pricePerShare) + commission;
 
         // Ensure adding the position will not go beyond the maximum investment amount.
         if ((position.pricePerShare * position.shares) + currentInvestment <= maxInvestment) {
