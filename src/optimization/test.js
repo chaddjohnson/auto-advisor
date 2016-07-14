@@ -19,10 +19,10 @@ var data = require('../../data/' + symbol + '.json');
 // Settings
 var balance = 100000;
 var startingBalance = balance;
-var investmentDivisor = 5;
+var investmentDivisor = 6;
 var baseInvestment = startingBalance / investmentDivisor;
-var buyTriggerChangePercentage = -1.65;
-var sellTriggerProfitPercentage = 2.75;
+var buyTriggerChangePercentage = -1.6;
+var sellTriggerProfitPercentage = 1.15;
 var maxInvestment = balance;
 var lastBuyDate = 0;
 var longHoldCount = 0;
@@ -67,7 +67,10 @@ data.forEach(function(dataPoint) {
     //     console.log(symbol + '\t' + 'SELL' + '\t' + dataPoint.date + '\t' + shareSum + '\t$' + (targetSellPrice * 1.01).toFixed(4) + '\t\t\t$' + grossProfit.toFixed(2) + '  \t$' + netProfit.toFixed(2) + '  \t$' + balance.toFixed(2) + '\t' + days);
     // }
 
-    if (positions.length && (dataPoint.close >= targetSellPrice || (days >= 30 && dataPoint.close >= averagePositionCostBasis))) {
+    var targetPriceReached = dataPoint.close >= targetSellPrice;
+    var averageReachedAndHeldTooLong = days >= 30 && dataPoint.close >= averagePositionCostBasis;
+
+    if (positions.length && (targetPriceReached || averageReachedAndHeldTooLong)) {
         let grossProfit = shareSum * dataPoint.close;
         let netProfit = grossProfit - costBasisSum;
 
