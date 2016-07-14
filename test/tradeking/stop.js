@@ -15,9 +15,9 @@ var tradeking_consumer = new oauth.OAuth(
     "HMAC-SHA1"
 );
 
-// Create a sell stop order (not a sell stop limit order).
+// Create a sell stop limit order so that the positions sell once the price reaches a certain point.
 var postData = '<FIXML xmlns="http://www.fixprotocol.org/FIXML-5-0-SP2">' +
-               '  <Order TmInForce="1" Typ="3" Side="2" Acct="' + configuration.account_id + '">' +
+               '  <Order TmInForce="1" Typ="4" Px="1.30" Side="2" Acct="' + configuration.account_id + '">' +
                '    <Instrmt SecTyp="CS" Sym="GSAT"/>' +
                '    <OrdQty Qty="1"/>' +
                '  </Order>' +
