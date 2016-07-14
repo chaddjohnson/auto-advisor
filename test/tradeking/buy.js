@@ -2,7 +2,7 @@
 var oauth = require('oauth');
 
 // Setup key/secret for authentication and API endpoint URL
-var configuration = require('./config.json');
+var configuration = require('../config.json').tradeking;
 
 // Setup the OAuth Consumer
 var tradeking_consumer = new oauth.OAuth(
