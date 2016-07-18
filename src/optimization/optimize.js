@@ -117,7 +117,7 @@ for (investmentDivisor=5; investmentDivisor<=20; investmentDivisor++) {
                         potentialOptimalSettings = null;
                     }
 
-                    if (balance - startingBalance > maxProfit && longHoldCount === 0) {
+                    if (balance - startingBalance > maxProfit && longHoldCount === 0 && new Date(dataPoint.date) >= 1463270400000) {
                         // Record a new max profit.
                         potentialMaxProfit = balance - startingBalance;
 
