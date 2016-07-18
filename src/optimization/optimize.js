@@ -34,9 +34,9 @@ var days = 0;
 
 console.log('Optimizing for ' + symbol);
 
-for (investmentDivisor=5; investmentDivisor<=20; investmentDivisor++) {
-    for (buyTriggerChangePercentage=-2.5; buyTriggerChangePercentage<=-1.5; buyTriggerChangePercentage+=0.05) {
-        for (sellTriggerProfitPercentage=0.5; sellTriggerProfitPercentage<=3; sellTriggerProfitPercentage+=0.05) {
+for (investmentDivisor=4; investmentDivisor<=20; investmentDivisor++) {
+    for (buyTriggerChangePercentage=-2.5; buyTriggerChangePercentage<=-1.25; buyTriggerChangePercentage+=0.05) {
+        for (sellTriggerProfitPercentage=0.5; sellTriggerProfitPercentage<=5; sellTriggerProfitPercentage+=0.05) {
             // Reset.
             balance = 100000;
             baseInvestment = startingBalance / investmentDivisor;
