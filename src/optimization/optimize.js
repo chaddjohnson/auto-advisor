@@ -69,35 +69,6 @@ for (investmentDivisor=4; investmentDivisor<=20; investmentDivisor++) {
 
                 days = Math.round((new Date(dataPoint.date) - lastBuyDate) / 24 / 60 / 60 / 1000);
 
-                // if (positions.length && dataPoint.high >= (targetSellPrice * 1.01)) {
-                //     let grossProfit = shareSum * (targetSellPrice * 1.01);
-                //     let netProfit = grossProfit - costBasisSum;
-
-                //     balance += grossProfit;
-                //     positions = [];
-                //     baseInvestment = balance / investmentDivisor;
-                //     maxInvestment = balance;
-
-                //     if (days > maxLongHoldCount) {
-                //         longHoldCount++;
-
-                //         potentialMaxProfit = 0;
-                //         potentialOptimalSettings = null;
-                //     }
-
-                //     if (balance - startingBalance > maxProfit && longHoldCount === 0) {
-                //         // Record a new max profit.
-                //         potentialMaxProfit = balance - startingBalance;
-
-                //         potentialOptimalSettings = {
-                //             investmentDivisor: investmentDivisor,
-                //             buyTriggerChangePercentage: parseFloat(buyTriggerChangePercentage.toFixed(2)),
-                //             sellTriggerProfitPercentage: parseFloat(sellTriggerProfitPercentage.toFixed(2)),
-                //             maxLongHoldCount: maxLongHoldCount
-                //         };
-                //     }
-                // }
-
                 var targetPriceReached = dataPoint.close >= targetSellPrice;
                 var averageReachedAndHeldTooLong = days >= 30 && dataPoint.close >= averagePositionCostBasis;
 
@@ -151,10 +122,6 @@ for (investmentDivisor=4; investmentDivisor<=20; investmentDivisor++) {
                         lastBuyDate = new Date(dataPoint.date);
                         days = 0;
                     }
-
-                    // Avoid trying to sell on the same day that a position was opened.
-                    previousPrice = dataPoint.close;
-                    return;
                 }
 
                 previousPrice = dataPoint.close;
@@ -236,10 +203,6 @@ data.forEach(function(dataPoint) {
             lastBuyDate = new Date(dataPoint.date);
             days = 0;
         }
-
-        // Avoid trying to sell on the same day that a position was opened.
-        previousPrice = dataPoint.close;
-        return;
     }
 
     previousPrice = dataPoint.close;

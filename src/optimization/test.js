@@ -20,10 +20,10 @@ var data = require('../../data/' + symbol + '.json');
 var balance = 100000;
 var startingBalance = balance;
 var commission = 4.95;
-var investmentDivisor = 6;
+var investmentDivisor = 7;
 var baseInvestment = startingBalance / investmentDivisor;
-var buyTriggerChangePercentage = -1.7;
-var sellTriggerProfitPercentage = 1.25;
+var buyTriggerChangePercentage = -1.19;
+var sellTriggerProfitPercentage = 4.45;
 var maxInvestment = balance;
 var lastBuyDate = 0;
 var longHoldCount = 0;
@@ -51,22 +51,6 @@ data.forEach(function(dataPoint) {
     var targetSellPrice = averagePositionCostBasis * (1 + (sellTriggerProfitPercentage / 100));
 
     days = Math.round((new Date(dataPoint.date) - lastBuyDate) / 24 / 60 / 60 / 1000);
-
-    // if (positions.length && dataPoint.high >= (targetSellPrice * 1.01)) {
-    //     let grossProfit = (shareSum * (targetSellPrice * 1.01)) - commission;
-    //     let netProfit = grossProfit - costBasisSum;
-
-    //     balance += grossProfit;
-    //     positions = [];
-    //     baseInvestment = balance / investmentDivisor;
-    //     maxInvestment = balance;
-
-    //     if (days > maxLongHoldCount) {
-    //         longHoldCount++;
-    //     }
-
-    //     console.log(symbol + '\t' + 'SELL' + '\t' + dataPoint.date + '\t' + shareSum + '\t$' + (targetSellPrice * 1.01).toFixed(4) + '\t\t\t$' + grossProfit.toFixed(2) + '  \t$' + netProfit.toFixed(2) + '  \t$' + balance.toFixed(2) + '\t' + days);
-    // }
 
     var targetPriceReached = dataPoint.close >= targetSellPrice;
     var averageReachedAndHeldTooLong = days >= 30 && dataPoint.close >= averagePositionCostBasis;
@@ -110,10 +94,6 @@ data.forEach(function(dataPoint) {
 
             console.log(symbol + '\t' + 'BUY' + '\t' + dataPoint.date + '\t' + position.shares + '\t$' + position.pricePerShare.toFixed(4) + '  \t$' + position.costBasis.toFixed(2) + '  \t\t\t\t\t$' + balance.toFixed(2));
         }
-
-        // Avoid trying to sell on the same day that a position was opened.
-        previousPrice = dataPoint.close;
-        return;
     }
 
     previousPrice = dataPoint.close;
