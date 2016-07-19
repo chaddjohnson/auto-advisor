@@ -18,10 +18,13 @@ var tradeking_consumer = new oauth.OAuth(
 // Make a request to the API endpoint
 // Manually update the access token/secret as parameters.  Typically this would be done through an OAuth callback when
 // authenticating other users.
-tradeking_consumer.get(configuration.api_url + '/accounts/4ZW24715.json', configuration.access_token, configuration.access_secret, function(error, data, response) {
+tradeking_consumer.get(configuration.api_url + '/accounts.json', configuration.access_token, configuration.access_secret, function(error, data, response) {
     // Parse the JSON data
-    account_data = JSON.parse(data);
+    accounts_data = JSON.parse(data);
 
     // Display the response
-    console.log(JSON.stringify(account_data.response));
+    console.log(JSON.stringify(accounts_data.response));
+
+    // Display available cash.
+    console.log(parseFloat(accounts_data.response.accounts.accountsummary.accountbalance.money.cash));
 });
