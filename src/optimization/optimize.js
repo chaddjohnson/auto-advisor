@@ -34,9 +34,9 @@ var days = 0;
 
 console.log('Optimizing for ' + symbol);
 
-for (investmentDivisor=4; investmentDivisor<=20; investmentDivisor++) {
-    for (buyTriggerChangePercentage=-2.5; buyTriggerChangePercentage<=-1.25; buyTriggerChangePercentage+=0.05) {
-        for (sellTriggerProfitPercentage=0.5; sellTriggerProfitPercentage<=5; sellTriggerProfitPercentage+=0.05) {
+for (investmentDivisor=4; investmentDivisor<=10; investmentDivisor++) {
+    for (buyTriggerChangePercentage=-2.5; buyTriggerChangePercentage<=-0.25; buyTriggerChangePercentage+=0.0125) {
+        for (sellTriggerProfitPercentage=0.5; sellTriggerProfitPercentage<=5; sellTriggerProfitPercentage+=0.0125) {
             // Reset.
             balance = 100000;
             baseInvestment = startingBalance / investmentDivisor;
@@ -94,8 +94,8 @@ for (investmentDivisor=4; investmentDivisor<=20; investmentDivisor++) {
 
                         potentialOptimalSettings = {
                             investmentDivisor: investmentDivisor,
-                            buyTriggerChangePercentage: parseFloat(buyTriggerChangePercentage.toFixed(2)),
-                            sellTriggerProfitPercentage: parseFloat(sellTriggerProfitPercentage.toFixed(2)),
+                            buyTriggerChangePercentage: buyTriggerChangePercentage,
+                            sellTriggerProfitPercentage: sellTriggerProfitPercentage,
                             maxLongHoldCount: maxLongHoldCount
                         };
                     }
