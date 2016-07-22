@@ -34,9 +34,9 @@ var days = 0;
 
 console.log('Optimizing for ' + symbol);
 
-for (investmentDivisor=4; investmentDivisor<=8; investmentDivisor++) {
-    for (sellTriggerProfitPercentage=0.5; sellTriggerProfitPercentage<=5; sellTriggerProfitPercentage+=0.125) {
-        for (investmentFactor=0.5; investmentFactor<10; investmentFactor+=0.125) {
+for (investmentDivisor=5; investmentDivisor<=9; investmentDivisor++) {
+    for (sellTriggerProfitPercentage=0.5; sellTriggerProfitPercentage<=5; sellTriggerProfitPercentage+=0.03125) {
+        for (investmentFactor=0.5; investmentFactor<5; investmentFactor+=0.03125) {
             // Reset.
             balance = 100000;
             baseInvestment = startingBalance / investmentDivisor;
@@ -115,7 +115,7 @@ for (investmentDivisor=4; investmentDivisor<=8; investmentDivisor++) {
                     position.costBasis = (position.shares * position.pricePerShare) + commission;
 
                     // Ensure adding the position will not go beyond the maximum investment amount.
-                    if ((position.pricePerShare * position.shares) + currentInvestment <= maxInvestment) {
+                    if ((position.pricePerShare * position.shares) + currentInvestment <= maxInvestment && position.shares > 0) {
                         positions.push(position);
 
                         balance -= position.costBasis;
@@ -172,6 +172,7 @@ data.forEach(function(dataPoint) {
     var targetPriceReached = dataPoint.close >= targetSellPrice;
     var averageReachedAndHeldTooLong = days >= 30 && dataPoint.close >= averagePositionCostBasis;
 
+
     if (positions.length && (targetPriceReached || averageReachedAndHeldTooLong)) {
         let grossProfit = (shareSum * dataPoint.close) - commission;
         let netProfit = grossProfit - costBasisSum;
@@ -197,7 +198,7 @@ data.forEach(function(dataPoint) {
         position.costBasis = (position.shares * position.pricePerShare) + commission;
 
         // Ensure adding the position will not go beyond the maximum investment amount.
-        if ((position.pricePerShare * position.shares) + currentInvestment <= maxInvestment) {
+        if ((position.pricePerShare * position.shares) + currentInvestment <= maxInvestment && position.shares > 0) {
             positions.push(position);
 
             balance -= position.costBasis;

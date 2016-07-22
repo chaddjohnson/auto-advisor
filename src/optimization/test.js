@@ -20,18 +20,18 @@ var data = require('../../data/' + symbol + '.json');
 var balance = 100000;
 var startingBalance = balance;
 var commission = 4.95;
-var investmentDivisor = 4;
+var investmentDivisor = 8;
 var baseInvestment = startingBalance / investmentDivisor;
-var sellTriggerProfitPercentage = 2.5;
+var sellTriggerProfitPercentage = 2.53125;
 var maxInvestment = balance;
 var lastBuyDate = 0;
 var longHoldCount = 0;
 var maxLongHoldCount = 100;
-var investmentFactor = 1.375;
+var investmentFactor = 0.6875;
 var days = 0;
 
-console.log('SYMBOL\tTYPE\tDATE\t\tCHANGE\t\tSHARES\tSHARE PRICE\tCOST\t\tGROSS\t\tNET\t\tBALANCE\t\tDAYS');
-console.log('======\t======\t==============\t======\t=============\t=============\t=============\t===========\t==============\t========');
+console.log('SYMBOL\tTYPE\tDATE\t\tCHANGE\tSHARES\tSHARE PRICE\tCOST\t\tGROSS\t\tNET\t\tBALANCE\t\tDAYS');
+console.log('======\t======\t==============\t======\t=======\t=============\t=============\t===========\t==============\t========\t========');
 
 data.forEach(function(dataPoint) {
     if (!previousPrice) {
@@ -85,7 +85,7 @@ data.forEach(function(dataPoint) {
         position.costBasis = (position.shares * position.pricePerShare) + commission;
 
         // Ensure adding the position will not go beyond the maximum investment amount.
-        if ((position.pricePerShare * position.shares) + currentInvestment <= maxInvestment) {
+        if ((position.pricePerShare * position.shares) + currentInvestment <= maxInvestment && position.shares > 0) {
             positions.push(position);
 
             balance -= position.costBasis;
