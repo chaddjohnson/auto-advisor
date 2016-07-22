@@ -30,7 +30,7 @@ var maxLongHoldCount = 100;
 var investmentFactor = 1.375;
 var days = 0;
 
-console.log('SYMBOL\tTYPE\tDATE\t\tSHARES\tSHARE PRICE\tCOST\t\tGROSS\t\tNET\t\tBALANCE\t\tDAYS');
+console.log('SYMBOL\tTYPE\tDATE\t\tCHANGE\t\tSHARES\tSHARE PRICE\tCOST\t\tGROSS\t\tNET\t\tBALANCE\t\tDAYS');
 console.log('======\t======\t==============\t======\t=============\t=============\t=============\t===========\t==============\t========');
 
 data.forEach(function(dataPoint) {
@@ -47,6 +47,7 @@ data.forEach(function(dataPoint) {
         shareSum += position.shares;
     });
 
+    var percentChange = ((dataPoint.close / previousPrice) - 1) * 100;
     var averagePositionCostBasis = costBasisSum / shareSum;
     var targetSellPrice = averagePositionCostBasis * (1 + (sellTriggerProfitPercentage / 100));
 
@@ -68,10 +69,9 @@ data.forEach(function(dataPoint) {
             longHoldCount++;
         }
 
-        console.log(symbol + '\t' + 'SELL' + '\t' + dataPoint.date + '\t' + shareSum + '\t$' + dataPoint.close.toFixed(4) + '\t\t\t$' + grossProfit.toFixed(2) + '  \t$' + netProfit.toFixed(2) + '  \t$' + balance.toFixed(2) + '\t' + days);
+        console.log(symbol + '\t' + 'SELL' + '\t' + dataPoint.date + '\t' + percentChange.toFixed(2) + '\t' + shareSum + '\t$' + dataPoint.close.toFixed(4) + '\t\t\t$' + grossProfit.toFixed(2) + '  \t$' + netProfit.toFixed(2) + '  \t$' + balance.toFixed(2) + '\t' + days);
     }
 
-    var percentChange = ((dataPoint.close / previousPrice) - 1) * 100;
     var currentInvestment = _.reduce(positions, function(memo, position) {
         return memo + (position.pricePerShare * position.shares);
     }, 0);
@@ -93,7 +93,7 @@ data.forEach(function(dataPoint) {
             lastBuyDate = new Date(dataPoint.date);
             days = 0;
 
-            console.log(symbol + '\t' + 'BUY' + '\t' + dataPoint.date + '\t' + position.shares + '\t$' + position.pricePerShare.toFixed(4) + '  \t$' + position.costBasis.toFixed(2) + '  \t\t\t\t\t$' + balance.toFixed(2));
+            console.log(symbol + '\t' + 'BUY' + '\t' + dataPoint.date + '\t' + percentChange.toFixed(2) + '\t' + position.shares + '\t$' + position.pricePerShare.toFixed(4) + '  \t$' + position.costBasis.toFixed(2) + '  \t\t\t\t\t$' + balance.toFixed(2));
         }
     }
 
