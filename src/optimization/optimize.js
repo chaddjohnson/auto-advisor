@@ -24,19 +24,19 @@ var startingBalance = balance;
 var commission = 4.95;
 var investmentDivisor;
 var baseInvestment;
-var buyTriggerChangePercentage;
 var sellTriggerProfitPercentage;
 var maxInvestment;
 var lastBuyDate;
 var longHoldCount;
 var maxLongHoldCount = 100;
+var investmentFactor;
 var days = 0;
 
 console.log('Optimizing for ' + symbol);
 
-for (investmentDivisor=4; investmentDivisor<=10; investmentDivisor++) {
-    for (buyTriggerChangePercentage=-2.5; buyTriggerChangePercentage<=-0.25; buyTriggerChangePercentage+=0.0125) {
-        for (sellTriggerProfitPercentage=0.5; sellTriggerProfitPercentage<=5; sellTriggerProfitPercentage+=0.0125) {
+for (investmentDivisor=4; investmentDivisor<=8; investmentDivisor++) {
+    for (sellTriggerProfitPercentage=0.5; sellTriggerProfitPercentage<=5; sellTriggerProfitPercentage+=0.125) {
+        for (investmentFactor=0.5; investmentFactor<10; investmentFactor+=0.125) {
             // Reset.
             balance = 100000;
             baseInvestment = startingBalance / investmentDivisor;
@@ -94,8 +94,8 @@ for (investmentDivisor=4; investmentDivisor<=10; investmentDivisor++) {
 
                         potentialOptimalSettings = {
                             investmentDivisor: investmentDivisor,
-                            buyTriggerChangePercentage: buyTriggerChangePercentage,
                             sellTriggerProfitPercentage: sellTriggerProfitPercentage,
+                            investmentFactor: investmentFactor,
                             maxLongHoldCount: maxLongHoldCount
                         };
                     }
@@ -106,10 +106,11 @@ for (investmentDivisor=4; investmentDivisor<=10; investmentDivisor++) {
                     return memo + (position.pricePerShare * position.shares);
                 }, 0);
 
-                if (percentChange < buyTriggerChangePercentage && currentInvestment < maxInvestment) {
+                if (percentChange < 0 && currentInvestment < maxInvestment) {
                     let position = {};
+                    let investment = baseInvestment * (percentChange / investmentFactor) * -1;
 
-                    position.shares = Math.floor(baseInvestment / dataPoint.close);
+                    position.shares = Math.floor(investment / dataPoint.close);
                     position.pricePerShare = dataPoint.close;
                     position.costBasis = (position.shares * position.pricePerShare) + commission;
 
@@ -187,10 +188,11 @@ data.forEach(function(dataPoint) {
         return memo + (position.pricePerShare * position.shares);
     }, 0);
 
-    if (percentChange < optimalSettings.buyTriggerChangePercentage && currentInvestment < maxInvestment) {
+    if (percentChange < 0 && currentInvestment < maxInvestment) {
         let position = {};
+        let investment = baseInvestment * (percentChange / optimalSettings.investmentFactor) * -1;
 
-        position.shares = Math.floor(baseInvestment / dataPoint.close);
+        position.shares = Math.floor(investment / dataPoint.close);
         position.pricePerShare = dataPoint.close;
         position.costBasis = (position.shares * position.pricePerShare) + commission;
 

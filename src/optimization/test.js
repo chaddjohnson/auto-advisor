@@ -20,14 +20,14 @@ var data = require('../../data/' + symbol + '.json');
 var balance = 100000;
 var startingBalance = balance;
 var commission = 4.95;
-var investmentDivisor = 9;
+var investmentDivisor = 4;
 var baseInvestment = startingBalance / investmentDivisor;
-var buyTriggerChangePercentage = -0.4125;
-var sellTriggerProfitPercentage = 2.8875;
+var sellTriggerProfitPercentage = 2.5;
 var maxInvestment = balance;
 var lastBuyDate = 0;
 var longHoldCount = 0;
 var maxLongHoldCount = 100;
+var investmentFactor = 1.375;
 var days = 0;
 
 console.log('SYMBOL\tTYPE\tDATE\t\tSHARES\tSHARE PRICE\tCOST\t\tGROSS\t\tNET\t\tBALANCE\t\tDAYS');
@@ -76,10 +76,11 @@ data.forEach(function(dataPoint) {
         return memo + (position.pricePerShare * position.shares);
     }, 0);
 
-    if (percentChange < buyTriggerChangePercentage && currentInvestment < maxInvestment) {
+    if (percentChange < 0 && currentInvestment < maxInvestment) {
         let position = {};
+        let investment = baseInvestment * (percentChange / investmentFactor) * -1;
 
-        position.shares = Math.floor(baseInvestment / dataPoint.close);
+        position.shares = Math.floor(investment / dataPoint.close);
         position.pricePerShare = dataPoint.close;
         position.costBasis = (position.shares * position.pricePerShare) + commission;
 
