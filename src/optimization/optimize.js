@@ -25,7 +25,6 @@ var commission = 4.95;
 var investmentDivisor;
 var baseInvestment;
 var sellTriggerProfitPercentage;
-var maxInvestment;
 var lastBuyDate;
 var longHoldCount;
 var maxLongHoldCount = 100;
@@ -40,7 +39,6 @@ for (investmentDivisor=5; investmentDivisor<=9; investmentDivisor++) {
             // Reset.
             balance = 100000;
             baseInvestment = startingBalance / investmentDivisor;
-            maxInvestment = balance;
             positions = [];
             previousPrice = 0;
             lastBuyDate = 0;
@@ -79,7 +77,6 @@ for (investmentDivisor=5; investmentDivisor<=9; investmentDivisor++) {
                     balance += grossProfit;
                     positions = [];
                     baseInvestment = balance / investmentDivisor;
-                    maxInvestment = balance;
 
                     if (days > maxLongHoldCount) {
                         longHoldCount++;
@@ -102,11 +99,8 @@ for (investmentDivisor=5; investmentDivisor<=9; investmentDivisor++) {
                 }
 
                 var percentChange = ((dataPoint.close / previousPrice) - 1) * 100;
-                var currentInvestment = _.reduce(positions, function(memo, position) {
-                    return memo + (position.pricePerShare * position.shares);
-                }, 0);
 
-                if (percentChange < 0 && currentInvestment < maxInvestment) {
+                if (percentChange < 0) {
                     let position = {};
                     let investment = baseInvestment * (percentChange / investmentFactor) * -1;
 
@@ -114,12 +108,11 @@ for (investmentDivisor=5; investmentDivisor<=9; investmentDivisor++) {
                     position.pricePerShare = dataPoint.close;
                     position.costBasis = (position.shares * position.pricePerShare) + commission;
 
-                    // Ensure adding the position will not go beyond the maximum investment amount.
-                    if ((position.pricePerShare * position.shares) + currentInvestment <= maxInvestment && position.shares > 0) {
+                    // Ensure adding the position will not exceed the balance.
+                    if (balance - position.costBasis > 0 && position.shares > 0) {
                         positions.push(position);
 
                         balance -= position.costBasis;
-                        currentInvestment += position.costBasis;
                         lastBuyDate = new Date(dataPoint.date);
                         days = 0;
                     }
@@ -140,7 +133,6 @@ var finalProfit = 0;
 
 balance = 100000;
 baseInvestment = startingBalance / optimalSettings.investmentDivisor;
-maxInvestment = balance;
 positions = [];
 previousPrice = 0;
 lastBuyDate = 0;
@@ -180,16 +172,12 @@ data.forEach(function(dataPoint) {
         balance += grossProfit;
         positions = [];
         baseInvestment = balance / optimalSettings.investmentDivisor;
-        maxInvestment = balance;
         finalProfit = balance - startingBalance;
     }
 
     var percentChange = ((dataPoint.close / previousPrice) - 1) * 100;
-    var currentInvestment = _.reduce(positions, function(memo, position) {
-        return memo + (position.pricePerShare * position.shares);
-    }, 0);
 
-    if (percentChange < 0 && currentInvestment < maxInvestment) {
+    if (percentChange < 0) {
         let position = {};
         let investment = baseInvestment * (percentChange / optimalSettings.investmentFactor) * -1;
 
@@ -197,12 +185,11 @@ data.forEach(function(dataPoint) {
         position.pricePerShare = dataPoint.close;
         position.costBasis = (position.shares * position.pricePerShare) + commission;
 
-        // Ensure adding the position will not go beyond the maximum investment amount.
-        if ((position.pricePerShare * position.shares) + currentInvestment <= maxInvestment && position.shares > 0) {
+        // Ensure adding the position will not exceed the balance.
+        if (balance - position.costBasis > 0 && position.shares > 0) {
             positions.push(position);
 
             balance -= position.costBasis;
-            currentInvestment += position.costBasis;
             lastBuyDate = new Date(dataPoint.date);
             days = 0;
         }

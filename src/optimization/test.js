@@ -20,14 +20,13 @@ var data = require('../../data/' + symbol + '.json');
 var balance = 100000;
 var startingBalance = balance;
 var commission = 4.95;
-var investmentDivisor = 8;
+var investmentDivisor = 6;
 var baseInvestment = startingBalance / investmentDivisor;
-var sellTriggerProfitPercentage = 2.53125;
-var maxInvestment = balance;
+var sellTriggerProfitPercentage = 2.5;
 var lastBuyDate = 0;
 var longHoldCount = 0;
 var maxLongHoldCount = 100;
-var investmentFactor = 0.6875;
+var investmentFactor = 0.8125;
 var days = 0;
 
 console.log('SYMBOL\tTYPE\tDATE\t\tCHANGE\tSHARES\tSHARE PRICE\tCOST\t\tGROSS\t\tNET\t\tBALANCE\t\tDAYS');
@@ -63,7 +62,6 @@ data.forEach(function(dataPoint) {
         balance += grossProfit;
         positions = [];
         baseInvestment = balance / investmentDivisor;
-        maxInvestment = balance;
 
         if (days > maxLongHoldCount) {
             longHoldCount++;
@@ -72,11 +70,7 @@ data.forEach(function(dataPoint) {
         console.log(symbol + '\t' + 'SELL' + '\t' + dataPoint.date + '\t' + percentChange.toFixed(2) + '\t' + shareSum + '\t$' + dataPoint.close.toFixed(4) + '\t\t\t$' + grossProfit.toFixed(2) + '  \t$' + netProfit.toFixed(2) + '  \t$' + balance.toFixed(2) + '\t' + days);
     }
 
-    var currentInvestment = _.reduce(positions, function(memo, position) {
-        return memo + (position.pricePerShare * position.shares);
-    }, 0);
-
-    if (percentChange < 0 && currentInvestment < maxInvestment) {
+    if (percentChange < 0) {
         let position = {};
         let investment = baseInvestment * (percentChange / investmentFactor) * -1;
 
@@ -84,12 +78,11 @@ data.forEach(function(dataPoint) {
         position.pricePerShare = dataPoint.close;
         position.costBasis = (position.shares * position.pricePerShare) + commission;
 
-        // Ensure adding the position will not go beyond the maximum investment amount.
-        if ((position.pricePerShare * position.shares) + currentInvestment <= maxInvestment && position.shares > 0) {
+        // Ensure adding the position will not exceed the balance.
+        if (balance - position.costBasis > 0 && position.shares > 0) {
             positions.push(position);
 
             balance -= position.costBasis;
-            currentInvestment += position.costBasis;
             lastBuyDate = new Date(dataPoint.date);
             days = 0;
 
