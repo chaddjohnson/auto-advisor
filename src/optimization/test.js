@@ -29,8 +29,8 @@ var maxLongHoldCount = 100;
 var investmentFactor = 0.8125;
 var days = 0;
 
-console.log('SYMBOL\tTYPE\tDATE\t\tCHANGE\tSHARES\tSHARE PRICE\tCOST\t\tGROSS\t\tNET\t\tBALANCE\t\tDAYS');
-console.log('======\t======\t==============\t======\t=======\t=============\t=============\t===========\t==============\t========\t========');
+console.log('SYMBOL\tTYPE\tDATE\t\tCHANGE\tSHARES\tSHARE PRICE\tCOST\t\tGROSS\t\tNET\t\tBALANCE\t\tDAYS HELD');
+console.log('======\t======\t==============\t======\t=======\t=============\t=============\t===========\t==============\t========\t=============');
 
 data.forEach(function(dataPoint) {
     if (!previousPrice) {

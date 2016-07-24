@@ -13,23 +13,31 @@ var symbol = process.argv[2];
 var quotes = require('../../data/' + symbol);
 var quoteIndex = -1;
 var previousQuote = null;
-var cashAvailable = 100000;
-var commission = 0;  // 4.95;
-var holdings = [];
+var cash = 100000;
+var commission = 4.95;
+var holding = {
+    qty: 0,
+    costbasis: 0
+};
 
 app.use(bodyParser.urlencoded({extended: true}));
 app.use(bodyParser.json());
 
-app.get('/quotes/previous', function(request, response) {
-    response.status(200).end(JSON.stringify(previousQuote));
-});
-
-app.get('/quotes/current', function(request, response) {
+app.get('/quotes/:symbol', function(request, response) {
     var currentQuote = quotes[++quoteIndex];
-
-    // Send the current quote.
     if (currentQuote) {
-        response.status(200).end(JSON.stringify(currentQuote));
+        response.status(200).end(JSON.stringify({
+            response: {
+                quotes: {
+                    quote: {
+                        datetime: currentQuote.date + 'T' + '19:25:00Z',
+                        last: currentQuote.close.toString(),
+                        pcls: previousQuote ? previousQuote.close.toString() : ''
+                    }
+                },
+                error: 'Success'
+            }
+        }));
 
         // Update the previous quote to be the current one.
         previousQuote = currentQuote;
@@ -39,62 +47,97 @@ app.get('/quotes/current', function(request, response) {
     }
 });
 
-app.get('/account/balance', function(request, response) {
+app.get('/account/:id', function(request, response) {
     response.status(200).end(JSON.stringify({
-        cashavailable: cashAvailable
+        response: {
+            accountbalance: {
+                money: {
+                    cash: cash.toString()
+                }
+            },
+            accountholdings: {
+                holding: {
+                    costbasis: holding.costbasis.toString(),
+                    qty: holding.qty.toString()
+                }
+            },
+            instrument: {
+                sym: symbol
+            },
+            error: 'Success'
+        }
     }));
 });
 
-app.get('/account/holdings', function(request, response) {
-    response.status(200).end(JSON.stringify(holdings));
-});
-
-app.post('/account/orders', function(request, response) {
+app.post('/account/:id/orders', function(request, response) {
     var currentQuote = quotes[quoteIndex];
     var type = request.body.type;
 
     if (type === 'BUY') {
-        let holding = {};
+        let newHolding = {};
 
-        holding.shares = request.body.shares;
-        holding.pricePerShare = currentQuote.close;
-        holding.costBasis = holding.shares * holding.pricePerShare;
+        newHolding.qty = request.body.qty;
+        newHolding.costbasis = (newHolding.qty * currentQuote.close) + commission;
 
         // Ensure there is enough available cash before adding the holding.
-        if ((holding.costBasis + commission) <= cashAvailable) {
-            // Add the holding to the list of holdings.
-            holdings.push(holding);
+        if ((newHolding.costbasis + commission) <= cash) {
+            // Add the new holding to the current holding.
+            holding.qty += newHolding.qty;
+            holding.costbasis += newHolding.costbasis;
 
-            cashAvailable -= holding.costBasis;
-            cashAvailable -= commission;
+            // Subtract new holding amount from cash.
+            cash -= newHolding.costbasis;
 
-            console.log('Bought ' + holding.shares + ' shares of ' + symbol + ' on ' + currentQuote.date + ' for $' + holding.pricePerShare.toFixed(4) + ' totaling $' + holding.costBasis.toFixed(2) + ', available cash $' + cashAvailable.toFixed(2));
-            response.status(201).end(JSON.stringify(holding));
+            console.log('Bought ' + newHolding.qty + ' shares of ' + symbol + ' on ' + currentQuote.date + ' for $' + currentQuote.close.toFixed(4) + ' totaling $' + newHolding.costbasis.toFixed(2) + ', available cash $' + cash.toFixed(2));
+
+            // Send the response.
+            response.status(201).end(JSON.stringify({
+                response: {
+                    error: 'Success'
+                }
+            }));
         }
         else {
             console.log('Insufficient cash.');
-            response.status(400).end(JSON.stringify({error: 'Insufficient cash.'}));
+
+            // Send the response.
+            response.status(400).end(JSON.stringify({
+                response: {
+                    error: 'Insufficient cash.'}
+                }
+            ));
         }
     }
     else if (type === 'SELL') {
-        let soldShares = 0;
+        let soldQty = 0;
         let earnings = 0;
 
-        // Sell all positions.
-        holdings.forEach(function(holding) {
-            cashAvailable += holding.shares * currentQuote.close;
-            earnings += holding.shares * currentQuote.close;
-            soldShares += holding.shares;
-        });
-        cashAvailable -= commission;
-        earnings -= commission;
-        holdings = [];
+        // Calculate earnings and sold shares from selling entire holding.
+        earnings = (holding.qty * currentQuote.close) - commission;
+        soldQty = holding.qty;
 
-        console.log('Sold ' + soldShares + ' of ' + symbol + ' on ' + currentQuote.date + ' for $ ' + currentQuote.close.toFixed(4) + ' totaling $' + earnings.toFixed(2) +', available cash ' + cashAvailable.toFixed(2));
-        response.status(201).end(JSON.stringify(holdings));
+        // Add earnings to cash.
+        cash += earnings;
+
+        // Reset the holding.
+        holding.qty = 0;
+        holding.costbasis = 0;
+
+        console.log('Sold ' + soldQty + ' of ' + symbol + ' on ' + currentQuote.date + ' for $ ' + currentQuote.close.toFixed(4) + ' totaling $' + earnings.toFixed(2) +', available cash ' + cash.toFixed(2));
+
+        // Send the response.
+        response.status(201).end(JSON.stringify({
+            response: {
+                error: 'Success'
+            }
+        }));
     }
     else {
-        response.status(400).end(JSON.stringify({error: 'Invalid type.'}));
+        response.status(400).end(JSON.stringify({
+            response: {
+                error: 'Invalid order type.'}
+            }
+        ));
     }
 });
 
