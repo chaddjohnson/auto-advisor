@@ -1,5 +1,5 @@
 {
-  "name": "average-down",
+  "name": "auto-advisor",
   "dependencies": {
     "async": "^2.0.0-rc.6",
     "body-parser": "^1.15.2",
