@@ -137,7 +137,7 @@ tasks.push(function(taskCallback) {
                     console.log(config.symbol + '\t' + 'SELL' + '\t' + quoteDatetime.match(/^\d{4}\-\d{2}\-\d{2}/)[0] + '\t' + percentChange.toFixed(2) + '\t' + holdingQty + '\t$' + price.toFixed(4) + '\t\t\t$' + netProfit.toFixed(2) + '  \t$' + cash.toFixed(2) + '\t' + daysHeld);
 
                     // Send an SMS.
-                    smsClient.send(config.sms.toNumber, 'Successfully sold ' + holdingQty + ' shares of ' + config.symbol + ' for $' + netProfit.toFixed(2) + ' profit. New balance is $' + cash.toFixed(2) + '.');
+                    smsClient.send(config.sms.toNumber, 'Successfully sold ' + holdingQty + ' shares of ' + config.symbol + ' at ~$' + price.toFixed(2) + ' for $' + netProfit.toFixed(2) + ' profit. New balance is $' + cash.toFixed(2) + '.');
 
                     taskCallback();
                 });
@@ -166,6 +166,17 @@ tasks.push(function(taskCallback) {
                 // Add a multi-second delay to let things settle.
                 setTimeout(function() {
                     tradingClient.getAccount().then(function(data) {
+                        // Calculate the average cost basis of the holdings.
+                        var averageHoldingCostBasis = data.holdingCostBasis / data.holdingQty;
+
+                        // Calculate the target sell price.
+                        var targetSellPrice = averageHoldingCostBasis * (1 + (config.sellTriggerProfitPercentage / 100));
+
+                        // If the holding has been held too long, then the target price is the break even price.
+                        if (daysHeld >= 30) {
+                            targetSellPrice = averageHoldingCostBasis;
+                        }
+
                         // Update the cash available.
                         cash = data.cash;
 
@@ -175,7 +186,7 @@ tasks.push(function(taskCallback) {
                         console.log(config.symbol + '\t' + 'BUY' + '\t' + quoteDatetime.match(/^\d{4}\-\d{2}\-\d{2}/)[0] + '\t' + percentChange.toFixed(2) + '\t' + qty + '\t$' + price.toFixed(4) + '  \t $' + (qty * price).toFixed(2) + '\t\t\t $' + cash.toFixed(2));
 
                         // Send an SMS.
-                        smsClient.send(config.sms.toNumber, config.symbol + ' has dropped ' + percentChange.toFixed(2) + '% since yesterday from ' + previousClosePrice.toFixed(2) + ' to ' + price.toFixed(2) + '. Successfully bought ' + qty + ' shares of ' + config.symbol + ' using $' + costBasis.toFixed(2) + '. New balance is $' + cash.toFixed(2) + '.');
+                        smsClient.send(config.sms.toNumber, config.symbol + ' has dropped ' + percentChange.toFixed(2) + '% since yesterday from ' + previousClosePrice.toFixed(2) + ' to ' + price.toFixed(2) + '. Successfully bought ' + qty + ' shares of ' + config.symbol + ' using $' + costBasis.toFixed(2) + '. Target price is $' + targetSellPrice.toFixed(2) + '. New balance is $' + cash.toFixed(2) + '.');
 
                         taskCallback();
                     }).catch(function(error) {
