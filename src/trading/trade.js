@@ -9,6 +9,7 @@ var config = require('../../config');
 // Libraries
 var _ = require('lodash');
 var async = require('async');
+var Holidays = require('date-holidays');
 
 // State
 var baseInvestment = 0;
@@ -33,6 +34,15 @@ var tasks = [];
 
 // Delay between buy/sell and balance lookup.
 var delay = process.env.NODE_ENV === 'production' ? 60 * 1000 : 0;
+
+// Determine if today is a holiday.
+var holidays = new Holidays('US');
+var holiday = holidays.isHoliday(new Date());
+
+// Do not trade in production mode on public and bank holidays.
+if (process.env.NODE_ENV === 'production' && holiday && (holiday.type === 'public' || holiday.type === 'bank')) {
+    process.exit(0);
+}
 
 // Request a quote.
 tasks.push(function(taskCallback) {
