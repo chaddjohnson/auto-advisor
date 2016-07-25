@@ -36,13 +36,17 @@ var tasks = [];
 var delay = process.env.NODE_ENV === 'production' ? 60 * 1000 : 0;
 
 // Determine if today is a holiday.
-var holidays = new Holidays('US');
-var holiday = holidays.isHoliday(new Date());
+tasks.push(function(taskCallback) {
+    var holidays = new Holidays('US');
+    var holiday = holidays.isHoliday(new Date());
 
-// Do not trade in production mode on public and bank holidays.
-if (process.env.NODE_ENV === 'production' && holiday && (holiday.type === 'public' || holiday.type === 'bank')) {
-    process.exit(0);
-}
+    // Do not trade in production mode on public and bank holidays.
+    if (process.env.NODE_ENV === 'production' && holiday && (holiday.type === 'public' || holiday.type === 'bank')) {
+        return taskCallback('No buy or sell activity occurred today as it is ' + (holiday.name || 'a holiday') + '.');
+    }
+
+    taskCallback();
+});
 
 // Request a quote.
 tasks.push(function(taskCallback) {
@@ -198,7 +202,7 @@ async.series(tasks, function(error) {
         console.log(error);
 
         // Send an SMS.
-        smsClient.send(config.sms.toNumber, 'An error occurred: ' + (error.message || error));
+        smsClient.send(config.sms.toNumber, error.message || error);
 
         return;
     }
