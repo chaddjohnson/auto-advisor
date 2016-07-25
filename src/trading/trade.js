@@ -36,7 +36,7 @@ var tasks = [];
 var delay = process.env.NODE_ENV === 'production' ? 60 * 1000 : 0;
 
 function formatDollars(number) {
-    return '$' + parseFloat(number.toFixed(2)).toLocaleString();
+    return '$' + number.toFixed(2).replace(/(\d)(?=(\d\d\d)+(?!\d))/g, '$1,');
 }
 
 // Determine if today is a holiday.
