@@ -6,7 +6,7 @@ var client = twilio(config.sms.accountSid, config.sms.authToken);
 
 // Send the text message.
 client.sendMessage({
-    to: config.toNumber,
-    from: config.fromNumber,
+    to: config.sms.toNumber,
+    from: config.sms.fromNumber,
     body: 'Hello from Twilio!'
 });
