@@ -30,7 +30,7 @@ var investmentFactor = 0.8125;
 var days = 0;
 
 console.log('SYMBOL\tTYPE\tDATE\t\tCHANGE\tSHARES\tSHARE PRICE\tCOST\t\tGROSS\t\tNET\t\tBALANCE\t\tDAYS HELD');
-console.log('======\t======\t==============\t======\t=======\t=============\t=============\t===========\t==============\t========\t=============');
+console.log('======\t======\t==============\t======\t======\t==============\t==============\t==============\t==============\t==============\t=========');
 
 data.forEach(function(dataPoint) {
     if (!previousPrice) {
@@ -86,7 +86,7 @@ data.forEach(function(dataPoint) {
             lastBuyDate = new Date(dataPoint.date);
             days = 0;
 
-            console.log(symbol + '\t' + 'BUY' + '\t' + dataPoint.date + '\t' + percentChange.toFixed(2) + '\t' + position.shares + '\t$' + position.pricePerShare.toFixed(4) + '  \t$' + position.costBasis.toFixed(2) + '  \t\t\t\t\t$' + balance.toFixed(2));
+            console.log(symbol + '\t' + 'BUY' + '\t' + dataPoint.date + '\t' + percentChange.toFixed(2) + '\t' + position.shares + '\t$' + position.pricePerShare.toFixed(4) + '\t  $' + position.costBasis.toFixed(2) + '\t\t\t\t\t  $' + balance.toFixed(2));
         }
     }
 
