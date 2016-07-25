@@ -20,6 +20,7 @@ var quoteDatetime = '';
 var holdingQty = 0;
 var holdingCostBasis = 0;
 var cash = 0;
+var activityOccurred = false;
 
 // Set up the trading client.
 var tradingClient = require('../../lib/tradingClients/base').factory(config.client, config.brokerage);
@@ -116,6 +117,8 @@ tasks.push(function(taskCallback) {
                     // Recalculate the base investment.
                     baseInvestment = cash / config.investmentDivisor;
 
+                    activityOccurred = true;
+
                     // Log what happened.
                     console.log(config.symbol + '\t' + 'SELL' + '\t' + quoteDatetime.match(/^\d{4}\-\d{2}\-\d{2}/)[0] + '\t' + percentChange.toFixed(2) + '\t' + holdingQty + '\t$' + price.toFixed(4) + '\t\t\t$' + netProfit.toFixed(2) + '  \t$' + cash.toFixed(2) + '\t' + daysHeld);
 
@@ -152,6 +155,8 @@ tasks.push(function(taskCallback) {
                         // Update the cash available.
                         cash = data.cash;
 
+                        activityOccurred = true;
+
                         // Log what happened.
                         console.log(config.symbol + '\t' + 'BUY' + '\t' + quoteDatetime.match(/^\d{4}\-\d{2}\-\d{2}/)[0] + '\t' + percentChange.toFixed(2) + '\t' + qty + '\t$' + price.toFixed(4) + '  \t$' + (qty * price).toFixed(2) + '\t\t\t\t\t$' + cash.toFixed(2));
 
@@ -186,5 +191,10 @@ async.series(tasks, function(error) {
         smsClient.send(config.sms.toNumber, 'An error occurred: ' + (error.message || error));
 
         return;
+    }
+
+    if (!activityOccurred) {
+        // Send an SMS.
+        smsClient.send(config.sms.toNumber, 'No buy or sell activity occurred today. Balance is $' + cash.toFixed(2) + '.');
     }
 });
