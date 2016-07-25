@@ -32,7 +32,7 @@ var smsClient = new (require('../../lib/sms'))(config.sms);
 var tasks = [];
 
 // Delay between buy/sell and balance lookup.
-var delay = process.env.NODE_ENV === 'production' ? 30 * 1000 : 0;
+var delay = process.env.NODE_ENV === 'production' ? 60 * 1000 : 0;
 
 // Request a quote.
 tasks.push(function(taskCallback) {
