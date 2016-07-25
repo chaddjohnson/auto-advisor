@@ -160,6 +160,9 @@ tasks.push(function(taskCallback) {
         let qty = Math.floor(investment / price);
         let costBasis = (qty * price) + config.brokerage.commission;
 
+        // Track cash prior to sell so that net profit can be calculated.
+        let previousCash = cash;
+
         // Ensure adding the holding will not go beyond the maximum investment amount.
         if (cash - costBasis > 0 && qty > 0) {
             tradingClient.buy(config.symbol, qty).then(function() {
@@ -183,10 +186,10 @@ tasks.push(function(taskCallback) {
                         activityOccurred = true;
 
                         // Log what happened.
-                        console.log(config.symbol + '\t' + 'BUY' + '\t' + quoteDatetime.match(/^\d{4}\-\d{2}\-\d{2}/)[0] + '\t' + percentChange.toFixed(2) + '\t' + qty + '\t$' + price.toFixed(4) + '  \t $' + (qty * price).toFixed(2) + '\t\t\t $' + cash.toFixed(2));
+                        console.log(config.symbol + '\t' + 'BUY' + '\t' + quoteDatetime.match(/^\d{4}\-\d{2}\-\d{2}/)[0] + '\t' + percentChange.toFixed(2) + '\t' + qty + '\t$' + price.toFixed(4) + '  \t $' + (previousCash - cash).toFixed(2) + '\t\t\t $' + cash.toFixed(2));
 
                         // Send an SMS.
-                        smsClient.send(config.sms.toNumber, config.symbol + ' has dropped ' + percentChange.toFixed(2) + '% since yesterday from ' + previousClosePrice.toFixed(2) + ' to ' + price.toFixed(2) + '. Successfully bought ' + qty + ' shares of ' + config.symbol + ' using $' + costBasis.toFixed(2) + '. Target price is $' + targetSellPrice.toFixed(2) + '. New balance is $' + cash.toFixed(2) + '.');
+                        smsClient.send(config.sms.toNumber, config.symbol + ' dropped ' + percentChange.toFixed(2) + '% since yesterday from ' + previousClosePrice.toFixed(2) + ' to ' + price.toFixed(2) + '. Successfully bought ' + qty + ' shares of ' + config.symbol + ' using $' + (previousCash - cash).toFixed(2) + '. Target price is $' + targetSellPrice.toFixed(2) + '. New balance is $' + cash.toFixed(2) + '.');
 
                         taskCallback();
                     }).catch(function(error) {
