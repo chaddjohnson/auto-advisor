@@ -35,6 +35,10 @@ var tasks = [];
 // Delay between buy/sell and balance lookup.
 var delay = process.env.NODE_ENV === 'production' ? 60 * 1000 : 0;
 
+function formatDollars(number) {
+    return '$' + number.toFixed(2).replace(/(\d)(?=(\d\d\d)+(?!\d))/g, '$1,');
+}
+
 // Determine if today is a holiday.
 tasks.push(function(taskCallback) {
     var holidays = new Holidays('US');
@@ -134,10 +138,10 @@ tasks.push(function(taskCallback) {
                     activityOccurred = true;
 
                     // Log what happened.
-                    console.log(config.symbol + '\t' + 'SELL' + '\t' + quoteDatetime.match(/^\d{4}\-\d{2}\-\d{2}/)[0] + '\t' + percentChange.toFixed(2) + '\t' + holdingQty + '\t$' + price.toFixed(4) + '\t\t\t$' + netProfit.toFixed(2) + '  \t$' + cash.toFixed(2) + '\t' + daysHeld);
+                    console.log(config.symbol + '\t' + 'SELL' + '\t' + quoteDatetime.match(/^\d{4}\-\d{2}\-\d{2}/)[0] + '\t' + percentChange.toFixed(2) + '%\t' + holdingQty + '\t' + formatDollars(price) + '\t\t\t\t' + formatDollars(netProfit) + ' \t' + formatDollars(cash) + '\t' + daysHeld);
 
                     // Send an SMS.
-                    smsClient.send(config.sms.toNumber, 'Successfully sold ' + holdingQty + ' shares of ' + config.symbol + ' at ~$' + price.toFixed(2) + ' for $' + netProfit.toFixed(2) + ' profit. New balance is $' + cash.toFixed(2) + '.');
+                    smsClient.send(config.sms.toNumber, 'Successfully sold ' + holdingQty + ' shares of ' + config.symbol + ' at ~' + formatDollars(price) + ' for ' + formatDollars(netProfit) + ' profit. New balance is ' + formatDollars(cash) + '.');
 
                     taskCallback();
                 });
@@ -186,10 +190,10 @@ tasks.push(function(taskCallback) {
                         activityOccurred = true;
 
                         // Log what happened.
-                        console.log(config.symbol + '\t' + 'BUY' + '\t' + quoteDatetime.match(/^\d{4}\-\d{2}\-\d{2}/)[0] + '\t' + percentChange.toFixed(2) + '\t' + qty + '\t$' + price.toFixed(4) + '  \t $' + (previousCash - cash).toFixed(2) + '\t\t\t $' + cash.toFixed(2));
+                        console.log(config.symbol + '\t' + 'BUY' + '\t' + quoteDatetime.match(/^\d{4}\-\d{2}\-\d{2}/)[0] + '\t' + percentChange.toFixed(2) + '%\t' + qty + '\t' + formatDollars(price) + '\t\t' + formatDollars(previousCash - cash) + ' \t\t\t' + formatDollars(cash));
 
                         // Send an SMS.
-                        smsClient.send(config.sms.toNumber, config.symbol + ' dropped ' + percentChange.toFixed(2) + '% since yesterday from ' + previousClosePrice.toFixed(2) + ' to ' + price.toFixed(2) + '. Successfully bought ' + qty + ' shares of ' + config.symbol + ' using $' + (previousCash - cash).toFixed(2) + '. Target price is $' + targetSellPrice.toFixed(2) + '. New balance is $' + cash.toFixed(2) + '.');
+                        smsClient.send(config.sms.toNumber, config.symbol + ' dropped ' + percentChange.toFixed(2) + '% since yesterday from ' + formatDollars(previousClosePrice) + ' to ' + formatDollars(price) + '. Successfully bought ' + qty + ' shares of ' + config.symbol + ' using ' + formatDollars(previousCash - cash) + '. Target price is ' + formatDollars(targetSellPrice) + '. New balance is ' + formatDollars(cash) + '.');
 
                         taskCallback();
                     }).catch(function(error) {
@@ -223,6 +227,6 @@ async.series(tasks, function(error) {
 
     if (!activityOccurred) {
         // Send an SMS.
-        smsClient.send(config.sms.toNumber, 'No buy or sell activity occurred today. Balance is $' + cash.toFixed(2) + '.');
+        smsClient.send(config.sms.toNumber, 'No buy or sell activity occurred today. Balance is ' + formatDollars(cash) + '.');
     }
 });
