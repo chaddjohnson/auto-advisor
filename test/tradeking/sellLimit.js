@@ -2,14 +2,14 @@
 var oauth = require('oauth');
 
 // Setup key/secret for authentication and API endpoint URL
-var configuration = require('../config.json').tradeking;
+var configuration = require('../../config.json').brokerage;
 
 // Setup the OAuth Consumer
 var tradeking_consumer = new oauth.OAuth(
     "https://developers.tradeking.com/oauth/request_token",
     "https://developers.tradeking.com/oauth/access_token",
-    configuration.consumer_key,
-    configuration.consumer_secret,
+    configuration.consumerKey,
+    configuration.consumerSecret,
     "1.0",
     "http://mywebsite.com/tradeking/callback",
     "HMAC-SHA1"
@@ -17,7 +17,7 @@ var tradeking_consumer = new oauth.OAuth(
 
 // Create a sell stop limit order so that the positions sell once the price reaches a certain point.
 var postData = '<FIXML xmlns="http://www.fixprotocol.org/FIXML-5-0-SP2">' +
-               '  <Order TmInForce="1" Typ="2" Px="1.31" Side="2" Acct="' + configuration.account_id + '">' +
+               '  <Order TmInForce="1" Typ="2" Px="1.31" Side="2" Acct="' + configuration.accountId + '">' +
                '    <Instrmt SecTyp="CS" Sym="GSAT"/>' +
                '    <OrdQty Qty="1"/>' +
                '  </Order>' +
@@ -25,9 +25,9 @@ var postData = '<FIXML xmlns="http://www.fixprotocol.org/FIXML-5-0-SP2">' +
 
 // Make a request to the API endpoint
 tradeking_consumer.post(
-    configuration.api_url + '/accounts/' + configuration.account_id + '/orders.json',
-    configuration.access_token,
-    configuration.access_secret,
+    configuration.apiUrl + '/accounts/' + configuration.accountId + '/orders.json',
+    configuration.accessToken,
+    configuration.accessSecret,
     postData,
     'application/xml',
     function(error, data, response) {

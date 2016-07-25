@@ -8,19 +8,18 @@ if (process.argv.length < 3) {
 // Libraries
 var request = require('request');
 var async = require('async');
-var _ = require('lodash');
 
-// Load config.
-var config = require('./config');
+// Config
+var config = require('../config');
 
-// State.
+// State
 var symbol = process.argv[2];
 var startingCash = 0;
 var baseInvestment = 0;
 var lastBuyDate = 0;
 var daysHeld = 0;
 
-// Settings.
+// Settings
 var commission = 4.95;
 var investmentDivisor = 6;
 var sellTriggerProfitPercentage = 2.5;
@@ -67,7 +66,7 @@ function nextQuote(symbol) {
 
     // Request account information.
     tasks.push(function(taskCallback) {
-        request('http://localhost:5000/account/' + config.tradeking.account_id, function(error, response, body) {
+        request('http://localhost:5000/accounts/' + config.brokerage.accountId, function(error, response, body) {
             if (error) {
                 return taskCallback(error);
             }
@@ -92,6 +91,9 @@ function nextQuote(symbol) {
             holdingCostBasis = parseFloat(data.accountholdings.holding.costbasis);
             holdingQty = parseFloat(data.accountholdings.holding.qty);
 
+            // Calculate the number of days held since the last buy.
+            daysHeld = Math.round((new Date(quoteDatetime) - lastBuyDate) / 24 / 60 / 60 / 1000);
+
             taskCallback();
         });
     });
@@ -110,9 +112,6 @@ function nextQuote(symbol) {
         // Calculate the target sell price.
         var targetSellPrice = averageHoldingCostBasis * (1 + (sellTriggerProfitPercentage / 100));
 
-        // Calculate the number of days held since the last buy.
-        var daysHeld = Math.round((new Date(quoteDatetime) - lastBuyDate) / 24 / 60 / 60 / 1000);
-
         // Determine whether the target price has been reached.
         var targetPriceReached = quotePrice >= targetSellPrice;
 
@@ -121,7 +120,7 @@ function nextQuote(symbol) {
 
         if (holdingQty > 0 && (targetPriceReached || heldTooLongAndBreakEvenReached)) {
             let requestOptions = {
-                url: 'http://localhost:5000/account/' + config.tradeking.account_id + '/orders',
+                url: 'http://localhost:5000/accounts/' + config.brokerage.accountId + '/orders',
                 method: 'POST',
                 json: {
                     type: 'SELL',
@@ -131,7 +130,11 @@ function nextQuote(symbol) {
             }
             request.post(requestOptions, function(error, response, body) {
                 // TODO: Add a multi-second delay here in the real trading script to let things settle.
-                request('http://localhost:5000/account/' + config.tradeking.account_id, function(error, response, body) {
+                request('http://localhost:5000/accounts/' + config.brokerage.accountId, function(error, response, body) {
+                    if (error) {
+                        return taskCallback(error);
+                    }
+
                     try {
                         var data = JSON.parse(body).response;
                     }
@@ -181,7 +184,7 @@ function nextQuote(symbol) {
             // Ensure adding the holding will not go beyond the maximum investment amount.
             if (cash - costBasis > 0 && qty > 0) {
                 let requestOptions = {
-                    url: 'http://localhost:5000/account/' + config.tradeking.account_id + '/orders',
+                    url: 'http://localhost:5000/accounts/' + config.brokerage.accountId + '/orders',
                     method: 'POST',
                     json: {
                         type: 'BUY',
@@ -195,7 +198,11 @@ function nextQuote(symbol) {
                     daysHeld = 0;
 
                     // TODO: Add a multi-second delay here in the real trading script to let things settle.
-                    request('http://localhost:5000/account/' + config.tradeking.account_id, function(error, response, body) {
+                    request('http://localhost:5000/accounts/' + config.brokerage.accountId, function(error, response, body) {
+                        if (error) {
+                            return taskCallback(error);
+                        }
+
                         try {
                             var data = JSON.parse(body).response;
                         }
@@ -210,7 +217,6 @@ function nextQuote(symbol) {
                         holdingCostBasis = parseFloat(data.accountholdings.holding.costbasis);
                         holdingQty = parseFloat(data.accountholdings.holding.qty);
 
-                        // TODO: Output more here (e.g., the balance).
                         console.log(symbol + '\t' + 'BUY' + '\t' + quoteDatetime.match(/^\d{4}\-\d{2}\-\d{2}/)[0] + '\t' + percentChange.toFixed(2) + '\t' + qty + '\t$' + quotePrice.toFixed(4) + '  \t$' + (qty * quotePrice).toFixed(2)) + '\t\t\t\t\t$' + cash.toFixed(2);
 
                         taskCallback();
@@ -226,6 +232,7 @@ function nextQuote(symbol) {
         }
     });
 
+    // Execute all tasks.
     async.series(tasks, function(error) {
         if (error) {
             return console.log(error);

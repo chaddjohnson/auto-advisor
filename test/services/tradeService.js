@@ -19,6 +19,7 @@ var holding = {
     qty: 0,
     costbasis: 0
 };
+var transactions = [];
 
 app.use(bodyParser.urlencoded({extended: true}));
 app.use(bodyParser.json());
@@ -32,7 +33,7 @@ app.get('/quotes/:symbol', function(request, response) {
                     quote: {
                         datetime: currentQuote.date + 'T' + '19:25:00Z',
                         last: currentQuote.close.toString(),
-                        pcls: previousQuote ? previousQuote.close.toString() : ''
+                        pcls: previousQuote ? previousQuote.close.toString() : currentQuote.close.toString()
                     }
                 },
                 error: 'Success'
@@ -47,7 +48,7 @@ app.get('/quotes/:symbol', function(request, response) {
     }
 });
 
-app.get('/account/:id', function(request, response) {
+app.get('/accounts/:id', function(request, response) {
     response.status(200).end(JSON.stringify({
         response: {
             accountbalance: {
@@ -69,7 +70,17 @@ app.get('/account/:id', function(request, response) {
     }));
 });
 
-app.post('/account/:id/orders', function(request, response) {
+app.get('/accounts/:id/history', function(request, response) {
+    response.status(200).end(JSON.stringify({
+        response: {
+            transactions: {
+                transaction: transactions
+            }
+        }
+    }));
+});
+
+app.post('/accounts/:id/orders', function(request, response) {
     var currentQuote = quotes[quoteIndex];
     var type = request.body.type;
 
@@ -87,6 +98,20 @@ app.post('/account/:id/orders', function(request, response) {
 
             // Subtract new holding amount from cash.
             cash -= newHolding.costbasis;
+
+            // Add to the transaction history.
+            transactions.unshift({
+                activity: 'Trade',
+                date: currentQuote.date + 'T00:00:00-04:00',
+                amount: newHolding.costbasis,
+                symbol: symbol,
+                transaction: {
+                    commission: commission,
+                    price: currentQuote.close,
+                    quantity: newHolding.qty,
+                    side: '1'
+                }
+            });
 
             console.log('Bought ' + newHolding.qty + ' shares of ' + symbol + ' on ' + currentQuote.date + ' for $' + currentQuote.close.toFixed(4) + ' totaling $' + newHolding.costbasis.toFixed(2) + ', available cash $' + cash.toFixed(2));
 
@@ -118,6 +143,20 @@ app.post('/account/:id/orders', function(request, response) {
 
         // Add earnings to cash.
         cash += earnings;
+
+        // Add to the transaction history.
+        transactions.unshift({
+            activity: 'Trade',
+            date: currentQuote.date + 'T00:00:00-04:00',
+            amount: holding.costbasis,
+            symbol: symbol,
+            transaction: {
+                commission: commission,
+                price: currentQuote.close,
+                quantity: holding.qty,
+                side: '2'
+            }
+        });
 
         // Reset the holding.
         holding.qty = 0;
