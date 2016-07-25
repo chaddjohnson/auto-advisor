@@ -9,7 +9,6 @@ var config = require('../../config');
 // Libraries
 var _ = require('lodash');
 var async = require('async');
-var tradingClient = require('../../lib/tradingClients/base').factory(config.client, config.brokerage);
 
 // State
 var baseInvestment = 0;
@@ -22,8 +21,17 @@ var holdingQty = 0;
 var holdingCostBasis = 0;
 var cash = 0;
 
+// Set up the trading client.
+var tradingClient = require('../../lib/tradingClients/base').factory(config.client, config.brokerage);
+
+// Set up the SMS client;
+var smsClient = new (require('../../lib/sms'))(config.sms);
+
 // Synchronous tasks to execute.
 var tasks = [];
+
+// Delay between buy/sell and balance lookup.
+var delay = process.env.NODE_ENV === 'production' ? 30 * 1000 : 0;
 
 // Request a quote.
 tasks.push(function(taskCallback) {
@@ -91,14 +99,16 @@ tasks.push(function(taskCallback) {
     // Determine whether the holding has been held too long but the break even price has been reached.
     var heldTooLongAndBreakEvenReached = daysHeld >= 30 && price >= averageHoldingCostBasis;
 
+    // Track cash prior to sell so that net profit can be calculated.
+    var previousCash = cash;
+
     if (holdingQty > 0 && (targetPriceReached || heldTooLongAndBreakEvenReached)) {
         tradingClient.sell(config.symbol, holdingQty).then(function() {
             // Add a multi-second delay to let things settle.
             setTimeout(function() {
                 // Get account updates.
                 tradingClient.getAccount().then(function(data) {
-                    var previousCash = cash;
-                    var netProfit = data.cash - previousCash;
+                    var netProfit = data.cash - (holdingCostBasis + previousCash);
 
                     // Update the cash available.
                     cash = data.cash;
@@ -109,12 +119,12 @@ tasks.push(function(taskCallback) {
                     // Log what happened.
                     console.log(config.symbol + '\t' + 'SELL' + '\t' + quoteDatetime.match(/^\d{4}\-\d{2}\-\d{2}/)[0] + '\t' + percentChange.toFixed(2) + '\t' + holdingQty + '\t$' + price.toFixed(4) + '\t\t\t$' + netProfit.toFixed(2) + '  \t$' + cash.toFixed(2) + '\t' + daysHeld);
 
-                    // TODO: Send an SMS.
-                    // ...
+                    // Send an SMS.
+                    smsClient.send(config.sms.toNumber, 'Successfully sold ' + holdingQty + ' shares of ' + config.symbol + ' for $' + netProfit.toFixed(2) + ' profit. New balance is $' + cash.toFixed(2) + '.');
 
                     taskCallback();
                 });
-            }, 30 * 1000);  // 30 seconds
+            }, delay);
         });
     }
     else {
@@ -143,16 +153,16 @@ tasks.push(function(taskCallback) {
                         cash = data.cash;
 
                         // Log what happened.
-                        console.log(config.symbol + '\t' + 'BUY' + '\t' + quoteDatetime.match(/^\d{4}\-\d{2}\-\d{2}/)[0] + '\t' + percentChange.toFixed(2) + '\t' + qty + '\t$' + price.toFixed(4) + '  \t$' + (qty * price).toFixed(2)) + '\t\t\t\t\t$' + cash.toFixed(2);
+                        console.log(config.symbol + '\t' + 'BUY' + '\t' + quoteDatetime.match(/^\d{4}\-\d{2}\-\d{2}/)[0] + '\t' + percentChange.toFixed(2) + '\t' + qty + '\t$' + price.toFixed(4) + '  \t$' + (qty * price).toFixed(2) + '\t\t\t\t\t$' + cash.toFixed(2));
 
-                        // TODO: Send an SMS.
-                        // ...
+                        // Send an SMS.
+                        smsClient.send(config.sms.toNumber, config.symbol + ' has dropped ' + percentChange.toFixed(2) + '% since yesterday from ' + previousClosePrice.toFixed(2) + ' to ' + price.toFixed(2) + '. Successfully bought ' + qty + ' shares of ' + config.symbol + ' using $' + costBasis.toFixed(2) + '. New balance is $' + cash.toFixed(2) + '.');
 
                         taskCallback();
                     }).catch(function(error) {
                         taskCallback(error);
                     });
-                }, 30 * 1000);  // 30 seconds
+                }, delay);
             }).catch(function(error) {
                 taskCallback(error);
             });
@@ -172,8 +182,8 @@ async.series(tasks, function(error) {
         // Log what happened.
         console.log(error);
 
-        // TODO: Send an SMS.
-        // ...
+        // Send an SMS.
+        smsClient.send(config.sms.toNumber, 'An error occurred: ' + (error.message || error));
 
         return;
     }
