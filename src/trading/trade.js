@@ -114,7 +114,7 @@ tasks.push(function(taskCallback) {
 
                     taskCallback();
                 });
-            }, 0);  // 30 seconds
+            }, 30 * 1000);  // 30 seconds
         });
     }
     else {
@@ -152,7 +152,7 @@ tasks.push(function(taskCallback) {
                     }).catch(function(error) {
                         taskCallback(error);
                     });
-                }, 0);  // 30 seconds
+                }, 30 * 1000);  // 30 seconds
             }).catch(function(error) {
                 taskCallback(error);
             });
