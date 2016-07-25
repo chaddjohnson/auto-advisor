@@ -193,7 +193,7 @@ tasks.push(function(taskCallback) {
                         console.log(config.symbol + '\t' + 'BUY' + '\t' + quoteDatetime.match(/^\d{4}\-\d{2}\-\d{2}/)[0] + '\t' + percentChange.toFixed(2) + '%\t' + qty + '\t' + formatDollars(price) + '\t\t' + formatDollars(previousCash - cash) + ' \t\t\t' + formatDollars(cash));
 
                         // Send an SMS.
-                        smsClient.send(config.sms.toNumber, config.symbol + ' dropped ' + percentChange.toFixed(2) + '% since yesterday from ' + formatDollars(previousClosePrice) + ' to ' + formatDollars(price) + '. Successfully bought ' + qty + ' shares of ' + config.symbol + ' using ' + formatDollars(previousCash - cash) + '. Target price is ' + formatDollars(targetSellPrice) + '. New balance is ' + formatDollars(cash) + '.');
+                        smsClient.send(config.sms.toNumber, config.symbol + ' dropped ' + percentChange.toFixed(2) + '% since previous close from ' + formatDollars(previousClosePrice) + ' to ' + formatDollars(price) + '. Successfully bought ' + qty + ' shares of ' + config.symbol + ' using ' + formatDollars(previousCash - cash) + '. Target price is ' + formatDollars(targetSellPrice) + '. New balance is ' + formatDollars(cash) + '.');
 
                         taskCallback();
                     }).catch(function(error) {
