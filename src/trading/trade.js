@@ -168,7 +168,7 @@ tasks.push(function(taskCallback) {
         let previousCash = cash;
 
         if (investment > cash) {
-            smsClient.send(config.sms.toNumber, config.symbol + ' dropped ' + percentChange.toFixed(2) + '% since previous close from ' + formatDollars(previousClosePrice) + ' to ' + formatDollars(price) + '. Potential investment amount exceeds balance. Consider placing a manual trade.');
+            return taskCallback(config.symbol + ' dropped ' + percentChange.toFixed(2) + '% since previous close from ' + formatDollars(previousClosePrice) + ' to ' + formatDollars(price) + '. Potential investment amount exceeds balance. Consider placing a manual trade.');
         }
 
         // Ensure adding the holding will not go beyond the maximum investment amount.
