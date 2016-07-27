@@ -167,6 +167,10 @@ tasks.push(function(taskCallback) {
         // Track cash prior to sell so that net profit can be calculated.
         let previousCash = cash;
 
+        if (investment > cash) {
+            smsClient.send(config.sms.toNumber, config.symbol + ' dropped ' + percentChange.toFixed(2) + '% since previous close from ' + formatDollars(previousClosePrice) + ' to ' + formatDollars(price) + '. Potential investment amount exceeds balance. Consider placing a manual trade.');
+        }
+
         // Ensure adding the holding will not go beyond the maximum investment amount.
         if (cash - costBasis > 0 && qty > 0) {
             tradingClient.buy(config.symbol, qty).then(function() {
