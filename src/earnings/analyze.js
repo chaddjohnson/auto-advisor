@@ -170,7 +170,7 @@ tasks.push(function(taskCallback) {
             return;
         }
 
-        if (earningsIndex === 0 && (results[0].morningChange >= 1 || results[0].dayChange >= 1)) {
+        if (earningsIndex === 0 && (results[0].morningChange >= 0.1 || results[0].dayChange >= 0.1)) {
             recentEarningsGood = true;
         }
     });
@@ -181,7 +181,8 @@ tasks.push(function(taskCallback) {
 // Execute tasks.
 async.series(tasks, function(error) {
     if (error) {
-        return console.error(symbol + ': ' + error);
+        //return console.error(symbol + ': ' + error);
+        return;
     }
 
     var morningChangeAverage = _.reduce(results, function(memo, item) {
@@ -196,10 +197,10 @@ async.series(tasks, function(error) {
     var dayWins = 0;
 
     results.forEach(function(result) {
-        if (result.morningChange >= 1) {
+        if (result.morningChange >= 0.1) {
             morningWins++;
         }
-        if (result.dayChange >= 1) {
+        if (result.dayChange >= 0.1) {
             dayWins++;
         }
     });
