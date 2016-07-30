@@ -19,6 +19,7 @@ var newsArticleUrl = '';
 var releasedInMorning = false;
 var quotes = [];
 var results = [];
+var recentEarningsGood = false;
 
 // Synchronous tasks.
 var tasks = [];
@@ -45,7 +46,7 @@ tasks.push(function(taskCallback) {
             // ...
 
             // Only worry about the last several earnings reports.
-            if (earningsDates.length >= 7) {
+            if (earningsDates.length >= 6) {
                 return;
             }
 
@@ -139,7 +140,7 @@ tasks.push(function(taskCallback) {
 tasks.push(function(taskCallback) {
     var error = null;
 
-    earningsDates.forEach(function(earningsDate) {
+    earningsDates.forEach(function(earningsDate, earningsIndex) {
         var quoteIndex = 0;
         var quote = _.find(quotes, function(item, index) {
             if (item.date === earningsDate) {
@@ -166,6 +167,11 @@ tasks.push(function(taskCallback) {
         }
         catch (error) {
             error = 'Error using quote.';
+            return;
+        }
+
+        if (earningsIndex === 0 && (results[0].morningChange >= 1 || results[0].dayChange >= 1)) {
+            recentEarningsGood = true;
         }
     });
 
@@ -202,5 +208,5 @@ async.series(tasks, function(error) {
     var dayWinRate = (dayWins / results.length) * 100;
 
     // Display results.
-    console.log(symbol + '\t' + morningChangeAverage.toFixed(2) + '\t\t' + dayChangeAverage.toFixed(2) + '\t' + morningWinRate.toFixed(2) + '\t\t' + dayWinRate.toFixed(2));
+    console.log(symbol + '\t' + morningChangeAverage.toFixed(2) + '\t\t' + dayChangeAverage.toFixed(2) + '\t' + morningWinRate.toFixed(2) + '\t\t' + dayWinRate.toFixed(2) + '\t\t' + recentEarningsGood);
 });
