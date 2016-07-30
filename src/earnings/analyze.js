@@ -40,7 +40,7 @@ tasks.push(function(taskCallback) {
         var $ = cheerio.load(body.toString());
 
         // Go through each earning history.
-        $('.earning_history .is_hilite').each(function(index) {
+        $('.earning_history .is_hilite, .earning_history .LiteHover').each(function(index) {
             // Skip if date is today or in the future.
             // ...
 
@@ -164,8 +164,7 @@ tasks.push(function(taskCallback) {
 // Execute tasks.
 async.series(tasks, function(error) {
     if (error) {
-        //return console.error(error);
-        return;
+        return console.error(error);
     }
 
     var morningChangeAverage = _.reduce(results, function(memo, item) {
