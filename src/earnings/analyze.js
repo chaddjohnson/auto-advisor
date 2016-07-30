@@ -164,7 +164,8 @@ tasks.push(function(taskCallback) {
 // Execute tasks.
 async.series(tasks, function(error) {
     if (error) {
-        return console.error(error);
+        // return console.error(error);
+        return;
     }
 
     var morningChangeAverage = _.reduce(results, function(memo, item) {
