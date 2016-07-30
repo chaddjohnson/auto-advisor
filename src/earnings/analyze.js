@@ -137,6 +137,8 @@ tasks.push(function(taskCallback) {
 
 // Analyze.
 tasks.push(function(taskCallback) {
+    var error = null;
+
     earningsDates.forEach(function(earningsDate) {
         var quoteIndex = 0;
         var quote = _.find(quotes, function(item, index) {
@@ -163,11 +165,11 @@ tasks.push(function(taskCallback) {
             });
         }
         catch (error) {
-            return taskCallback('Error using quote.');
+            error = 'Error using quote.';
         }
     });
 
-    taskCallback();
+    taskCallback(error);
 });
 
 // Execute tasks.
