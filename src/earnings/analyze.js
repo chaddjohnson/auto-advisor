@@ -208,5 +208,5 @@ async.series(tasks, function(error) {
     var dayWinRate = (dayWins / results.length) * 100;
 
     // Display results.
-    console.log(symbol + '\t' + morningChangeAverage.toFixed(2) + '\t\t' + dayChangeAverage.toFixed(2) + '\t' + morningWinRate.toFixed(2) + '\t\t' + dayWinRate.toFixed(2) + '\t\t' + recentEarningsGood);
+    console.log(symbol + '\t' + morningChangeAverage.toFixed(2) + '\t\t' + dayChangeAverage.toFixed(2) + '\t\t' + morningWinRate.toFixed(2) + '\t\t' + dayWinRate.toFixed(2) + '\t\t' + recentEarningsGood);
 });
