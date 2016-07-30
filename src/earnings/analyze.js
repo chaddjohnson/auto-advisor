@@ -163,7 +163,7 @@ tasks.push(function(taskCallback) {
             });
         }
         catch (error) {
-            console.log('Error using quote.');
+            return taskCallback('Error using quote.');
         }
     });
 
