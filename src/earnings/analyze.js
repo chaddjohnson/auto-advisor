@@ -109,6 +109,10 @@ tasks.push(function(taskCallback) {
 
         var lines = body.toString().split('\n');
 
+        if (lines[0] !== 'Date,Open,High,Low,Close,Volume,Adj Close') {
+            return taskCallback('Bad quote data.');
+        }
+
         lines.shift();
 
         lines.forEach(function(line) {
