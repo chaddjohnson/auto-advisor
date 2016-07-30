@@ -45,7 +45,7 @@ tasks.push(function(taskCallback) {
             // ...
 
             // Only worry about the last several earnings reports.
-            if (earningsDates.length >= 6) {
+            if (earningsDates.length >= 7) {
                 return;
             }
 
@@ -156,10 +156,15 @@ tasks.push(function(taskCallback) {
         }
 
         // Calculate results.
-        results.push({
-            morningChange: ((quote.open / previousQuote.close) - 1) * 100,
-            dayChange: ((quote.close / previousQuote.close) - 1) * 100
-        });
+        try {
+            results.push({
+                morningChange: ((quote.open / previousQuote.close) - 1) * 100,
+                dayChange: ((quote.close / previousQuote.close) - 1) * 100
+            });
+        }
+        catch (error) {
+            console.log('Error using quote.');
+        }
     });
 
     taskCallback();
@@ -168,8 +173,7 @@ tasks.push(function(taskCallback) {
 // Execute tasks.
 async.series(tasks, function(error) {
     if (error) {
-        // return console.error(error);
-        return;
+        return console.error(symbol + ': ' + error);
     }
 
     var morningChangeAverage = _.reduce(results, function(memo, item) {
