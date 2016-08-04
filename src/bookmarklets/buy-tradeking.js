@@ -1,5 +1,5 @@
 (function() {
-    var symbol, commission, buyingPower, amount, askPrice, shares;
+    var symbol, commission, buyingPower, amount, askPrice, shares, lastAskPrice;
 
     commission = 4.95;
     symbol = jQuery('#symbol').val() || prompt('Symbol');
@@ -19,21 +19,35 @@
     // Select "Market".
     jQuery('#ordType_1').click();
 
-    // Enter the symbol.
     window.setTimeout(function() {
+        // Enter the symbol.
         jQuery('#symbol').focus();
         jQuery('#symbol').val(symbol);
         jQuery('#symbol').blur();
+
+        updateShares();
     }, 100);
 
-    window.setTimeout(function() {
-        // Find the ask price.
-        askPrice = parseFloat(jQuery('#quotePanelAsk0').text());
+    function updateShares() {
+        // Click the Refresh button.
+        jQuery('#refreshButton').click();
 
-        // Calculate the number of shares that can be purchased using the amount.
-        shares = Math.floor((amount - commission) / askPrice);
+        // Wait for the response.
+        window.setTimeout(function() {
+            // Find the ask price.
+            askPrice = parseFloat(jQuery('#quotePanelAsk0').text());
 
-        // Enter the number of shares.
-        jQuery('#amount').val(shares);
-    }, 1000);
+            if (askPrice !== lastAskPrice) {
+                // Calculate the number of shares that can be purchased using the amount.
+                shares = Math.floor((amount - commission) / askPrice);
+
+                // Enter the number of shares.
+                jQuery('#amount').val(shares);
+            }
+
+            lastAskPrice = askPrice;
+
+            window.setTimeout(updateShares, 1000);
+        }, 500);
+    }
 })();
