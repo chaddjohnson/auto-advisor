@@ -42,9 +42,6 @@ tasks.push(function(taskCallback) {
 
         // Go through each earning history.
         $('.earning_history .is_hilite, .earning_history .LiteHover').each(function(index) {
-            // Skip if date is today or in the future.
-            // ...
-
             // Only worry about the last several earnings reports.
             if (earningsDates.length >= 6) {
                 return;
@@ -57,7 +54,7 @@ tasks.push(function(taskCallback) {
             date = date.replace(/\-([0-9])(\-|$)/g, '-0$1$2');
             date = date.replace(/\-([0-9])(\-|$)/g, '-0$1$2');
 
-            if (new Date(date) > new Date()) {
+            if (new Date(date) >= new Date()) {
                 // Skip the date if it's today or in the future.
                 return;
             }
