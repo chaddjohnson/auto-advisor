@@ -20,13 +20,13 @@ var data = require('../../data/' + symbol + '.json');
 var balance = 100000;
 var startingBalance = balance;
 var commission = 4.95;
-var investmentDivisor = 6;
+var investmentDivisor = 5;
 var baseInvestment = startingBalance / investmentDivisor;
-var sellTriggerProfitPercentage = 2.5;
+var sellTriggerProfitPercentage = 0.96875;
 var lastBuyDate = 0;
 var longHoldCount = 0;
 var maxLongHoldCount = 100;
-var investmentFactor = 0.8125;
+var investmentFactor = 2.46875;
 var days = 0;
 
 console.log('SYMBOL\tTYPE\tDATE\t\tCHANGE\tSHARES\tSHARE PRICE\tCOST\t\tGROSS\t\tNET\t\tBALANCE\t\tDAYS HELD');
