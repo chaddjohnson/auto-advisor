@@ -32,7 +32,7 @@ var activityOccurred = false;
 var tradingClient = require('../../lib/tradingClients/base').factory(config.client, config.brokerage);
 
 // Set up the SMS client;
-var smsClient = new (require('../../lib/sms'))(config.sms);
+var smsClient = new (require('../../lib/smsClient'))(config.sms);
 
 // Synchronous tasks to execute.
 var tasks = [];
