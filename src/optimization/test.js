@@ -29,7 +29,7 @@ var lastBuyDate = 0;
 var longHoldCount = 0;
 var maxLongHoldCount = 100;
 var investmentFactor = 1.4625;
-var days = 0;
+var daysHeld = 0;
 var sequentialBuyDays = 0;
 var sequentialIncreaseDays = 0;
 
@@ -55,10 +55,14 @@ data.forEach(function(dataPoint) {
     var averagePositionCostBasis = costBasisSum / shareSum;
     var targetSellPrice = averagePositionCostBasis * (1 + (sellTriggerProfitPercentage / 100));
 
-    days = Math.round((new Date(dataPoint.date) - new Date(lastBuyDate)) / 24 / 60 / 60 / 1000);
+    daysHeld = Math.round((new Date(dataPoint.date) - new Date(lastBuyDate)) / 24 / 60 / 60 / 1000);
+
+    if (positions.length === 0) {
+        daysHeld = 0;
+    }
 
     var targetPriceReached = dataPoint.close >= targetSellPrice;
-    var averageReachedAndHeldTooLong = days >= 30 && dataPoint.close >= averagePositionCostBasis;
+    var averageReachedAndHeldTooLong = daysHeld >= 30 && dataPoint.close >= averagePositionCostBasis;
 
     if (previousPercentChange > 0 && percentChange > 0) {
         sequentialIncreaseDays++;
@@ -82,14 +86,14 @@ data.forEach(function(dataPoint) {
         baseInvestment = balance / investmentDivisor;
         sequentialBuyDays = 0;
 
-        if (days > maxLongHoldCount) {
+        if (daysHeld > maxLongHoldCount) {
             longHoldCount++;
         }
 
-        console.log(symbol + '\t' + 'SELL' + '\t' + dataPoint.date + '\t' + percentChange.toFixed(2) + '\t' + shareSum + '\t$' + dataPoint.close.toFixed(4) + '\t\t\t$' + grossProfit.toFixed(2) + '  \t$' + netProfit.toFixed(2) + '  \t$' + balance.toFixed(2) + '\t' + days);
+        console.log(symbol + '\t' + 'SELL' + '\t' + dataPoint.date + '\t' + percentChange.toFixed(2) + '\t' + shareSum + '\t$' + dataPoint.close.toFixed(4) + '\t\t\t$' + grossProfit.toFixed(2) + '  \t$' + netProfit.toFixed(2) + '  \t$' + balance.toFixed(2) + '\t' + daysHeld);
     }
 
-    if (percentChange < 0 && (sequentialBuyDays < 4 || sequentialIncreaseDays >= 2)) {
+    if (percentChange < 0 && sequentialBuyDays < 4) {
         let position = {};
         let investment = baseInvestment * (percentChange / investmentFactor) * -1;
 
@@ -110,7 +114,7 @@ data.forEach(function(dataPoint) {
 
             balance -= position.costBasis;
             lastBuyDate = dataPoint.date;
-            days = 0;
+            daysHeld = 0;
 
             console.log(symbol + '\t' + 'BUY' + '\t' + dataPoint.date + '\t' + percentChange.toFixed(2) + '\t' + position.shares + '\t$' + position.pricePerShare.toFixed(4) + '\t  $' + position.costBasis.toFixed(2) + '\t\t\t\t\t  $' + balance.toFixed(2));
         }
