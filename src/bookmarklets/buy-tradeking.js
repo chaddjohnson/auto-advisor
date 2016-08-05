@@ -66,7 +66,7 @@
 
             lastAskPrice = askPrice;
 
-            window.bookmarkletUpdateTimeout = window.setTimeout(updateShares, 1000);
+            window.bookmarkletUpdateTimeout = window.setTimeout(updateShares, 2000);
         }, 500);
     }
 })();
