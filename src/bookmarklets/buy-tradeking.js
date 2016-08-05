@@ -14,7 +14,15 @@
 
     // Find the day trading buying power.
     buyingPower = parseFloat(jQuery('#balanceTable tbody tr:nth-child(1) .BalDataRowCash').text().replace(/[\$\,]/g, ''));
-    defaultInvestment = parseFloat((buyingPower / 6).toFixed(2));
+    defaultInvestment = 10000;
+
+    // Do not let the investment exceed the buying power.
+    if (defaultInvestment > buyingPower) {
+        defaultInvestment = buyingPower - commission;
+    }
+
+    // Round to two decimals.
+    defaultInvestment = parseFloat(defaultInvestment.toFixed(2));
 
     // Ask for the amount to trade, defaulting to the buying power.
     amount = prompt('Amount', defaultInvestment).replace(/[\$\,]/g, '');
