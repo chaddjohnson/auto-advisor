@@ -1,17 +1,23 @@
 (function() {
-    var symbol, commission, buyingPower, amount, askPrice, shares, lastAskPrice;
+    var symbol, commission, buyingPower, defaultInvestment, amount, askPrice, shares, lastAskPrice;
+
+    // Clear timeouts to reset things.
+    if (window.bookmarkletQuoteTimeout) {
+        window.clearTimeout(window.bookmarkletQuoteTimeout);
+    }
+    if (window.bookmarkletUpdateTimeout) {
+        window.clearTimeout(window.bookmarkletUpdateTimeout);
+    }
 
     commission = 4.95;
-    symbol = jQuery('#symbol').val() || prompt('Symbol');
+    symbol = prompt('Symbol');
 
     // Find the day trading buying power.
     buyingPower = parseFloat(jQuery('#balanceTable tbody tr:nth-child(1) .BalDataRowCash').text().replace(/[\$\,]/g, ''));
+    defaultInvestment = parseFloat((buyingPower / 6).toFixed(2));
 
     // Ask for the amount to trade, defaulting to the buying power.
-    amount = window.bookmarkletAmount || prompt('Amount', buyingPower).replace(/[\$\,]/g, '');
-
-    // Track the amount globally.
-    window.bookmarkletAmount = amount;
+    amount = prompt('Amount', defaultInvestment).replace(/[\$\,]/g, '');
 
     // Select "Buy".
     jQuery('#transaction_1').click();
@@ -33,7 +39,7 @@
         jQuery('#refreshButton').click();
 
         // Wait for the response.
-        window.setTimeout(function() {
+        window.bookmarkletQuoteTimeout = window.setTimeout(function() {
             // Find the ask price.
             askPrice = parseFloat(jQuery('#quotePanelAsk0').text());
 
@@ -45,11 +51,14 @@
                 if (shares && shares !== Infinity) {
                     jQuery('#amount').val(shares);
                 }
+                else {
+                    jQuery('#amount').val('');
+                }
             }
 
             lastAskPrice = askPrice;
 
-            window.setTimeout(updateShares, 1000);
+            window.bookmarkletUpdateTimeout = window.setTimeout(updateShares, 1000);
         }, 500);
     }
 })();
