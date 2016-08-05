@@ -42,7 +42,9 @@
                 shares = Math.floor((amount - commission) / askPrice);
 
                 // Enter the number of shares.
-                jQuery('#amount').val(shares);
+                if (shares && shares !== Infinity) {
+                    jQuery('#amount').val(shares);
+                }
             }
 
             lastAskPrice = askPrice;
