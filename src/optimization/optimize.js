@@ -38,8 +38,8 @@ var sequentialIncreaseDays = 0;
 console.log('Optimizing for ' + symbol);
 
 for (investmentDivisor=5; investmentDivisor<=9; investmentDivisor++) {
-    for (sellTriggerProfitPercentage=0.5; sellTriggerProfitPercentage<=5; sellTriggerProfitPercentage+=0.03125) {
-        for (investmentFactor=0.5; investmentFactor<5; investmentFactor+=0.03125) {
+    for (sellTriggerProfitPercentage=0.5; sellTriggerProfitPercentage<=4; sellTriggerProfitPercentage+=0.03125) {
+        for (investmentFactor=0.5; investmentFactor<3; investmentFactor+=0.03125) {
             // Reset.
             balance = 100000;
             baseInvestment = startingBalance / investmentDivisor;
@@ -163,103 +163,5 @@ for (investmentDivisor=5; investmentDivisor<=9; investmentDivisor++) {
     }
 }
 
-var finalProfit = 0;
-
-balance = 100000;
-baseInvestment = startingBalance / optimalSettings.investmentDivisor;
-positions = [];
-previousPrice = 0;
-previousDate = 0;
-previousPercentChange = 0;
-lastBuyDate = 0;
-daysHeld = 0;
-sequentialBuyDays = 0;
-sequentialIncreaseDays = 0;
-
-data.forEach(function(dataPoint) {
-    if (!previousPrice) {
-        previousPrice = dataPoint.close;
-        previousDate = dataPoint.date;
-        return;
-    }
-
-    if (new Date(dataPoint.date).getFullYear() < 2015) {
-        return;
-    }
-
-    var costBasisSum = 0;
-    var shareSum = 0;
-
-    positions.forEach(function(position) {
-        costBasisSum += position.costBasis;
-        shareSum += position.shares;
-    });
-
-    var percentChange = ((dataPoint.close / previousPrice) - 1) * 100;
-    var averagePositionCostBasis = costBasisSum / shareSum;
-    var targetSellPrice = averagePositionCostBasis * (1 + (optimalSettings.sellTriggerProfitPercentage / 100));
-
-    daysHeld = Math.round((new Date(dataPoint.date) - new Date(lastBuyDate)) / 24 / 60 / 60 / 1000);
-
-    if (positions.length === 0) {
-        daysHeld = 0;
-    }
-
-    var targetPriceReached = dataPoint.close >= targetSellPrice;
-    var averageReachedAndHeldTooLong = daysHeld >= 30 && dataPoint.close >= averagePositionCostBasis;
-
-    if (previousPercentChange > 0 && percentChange > 0) {
-        sequentialIncreaseDays++;
-    }
-    else {
-        sequentialIncreaseDays = 0;
-    }
-
-    if (sequentialIncreaseDays >= 2) {
-        sequentialBuyDays = 0;
-    }
-
-    previousPercentChange = percentChange;
-
-    if (positions.length && (targetPriceReached || averageReachedAndHeldTooLong)) {
-        let grossProfit = (shareSum * dataPoint.close) - commission;
-        let netProfit = grossProfit - costBasisSum;
-
-        balance += grossProfit;
-        positions = [];
-        baseInvestment = balance / optimalSettings.investmentDivisor;
-        sequentialBuyDays = 0;
-        finalProfit = balance - startingBalance;
-    }
-
-    if (percentChange < 0 && sequentialBuyDays < 4) {
-        let position = {};
-        let investment = baseInvestment * (percentChange / optimalSettings.investmentFactor) * -1;
-
-        position.shares = Math.floor(investment / dataPoint.close);
-        position.pricePerShare = dataPoint.close;
-        position.costBasis = (position.shares * position.pricePerShare) + commission;
-
-        // Ensure adding the position will not exceed the balance.
-        if (balance - position.costBasis > 0 && position.shares > 0) {
-            positions.push(position);
-
-            if (sequentialBuyDays === 0 || previousDate === lastBuyDate) {
-                sequentialBuyDays++;
-            }
-            else {
-                sequentialBuyDays = 0;
-            }
-
-            balance -= position.costBasis;
-            lastBuyDate = dataPoint.date;
-            daysHeld = 0;
-        }
-    }
-
-    previousPrice = dataPoint.close;
-    previousDate = dataPoint.date;
-});
-
-console.log(parseFloat(maxProfit.toFixed(2)), parseFloat(finalProfit.toFixed(2)));
+console.log(parseFloat(maxProfit.toFixed(2)));
 console.log(JSON.stringify(optimalSettings));
