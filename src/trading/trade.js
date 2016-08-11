@@ -128,7 +128,7 @@ tasks.push(function(taskCallback) {
     var targetPriceReached = price >= targetSellPrice;
 
     // Determine whether the holding has been held too long but the break even price has been reached.
-    var heldTooLongAndBreakEvenReached = daysHeld >= 30 && price >= averageHoldingCostBasis;
+    var heldTooLongAndBreakEvenReached = daysHeld >= config.maxDaysHeld && price >= averageHoldingCostBasis;
 
     // Track cash prior to sell so that net profit can be calculated.
     var previousCash = cash;
@@ -325,7 +325,7 @@ tasks.push(function(taskCallback) {
                         var targetSellPrice = averageHoldingCostBasis * (1 + (config.sellTriggerProfitPercentage / 100));
 
                         // If the holding has been held too long, then the target price is the break even price.
-                        if (daysHeld >= 30) {
+                        if (daysHeld >= config.maxDaysHeld) {
                             targetSellPrice = averageHoldingCostBasis;
                         }
 
