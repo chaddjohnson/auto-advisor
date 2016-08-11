@@ -22,16 +22,17 @@ var data = require('../../data/' + symbol + '.json');
 var balance = 100000;
 var startingBalance = balance;
 var commission = 4.95;
-var investmentDivisor = 6;
+var investmentDivisor = 7;
 var baseInvestment = startingBalance / investmentDivisor;
-var sellTriggerProfitPercentage = 0.978125;
+var sellTriggerProfitPercentage = 2.390625;
 var lastBuyDate = 0;
 var longHoldCount = 0;
 var maxLongHoldCount = 100;
-var investmentFactor = 1.4625;
+var investmentFactor = 0.671875;
 var daysHeld = 0;
 var sequentialBuyDays = 0;
 var sequentialIncreaseDays = 0;
+var maxDaysHeld = 13;
 
 console.log('SYMBOL\tTYPE\tDATE\t\tCHANGE\tSHARES\tSHARE PRICE\tCOST\t\tGROSS\t\tNET\t\tBALANCE\t\tDAYS HELD');
 console.log('======\t======\t==============\t======\t======\t==============\t==============\t==============\t==============\t==============\t=========');
@@ -62,7 +63,7 @@ data.forEach(function(dataPoint) {
     }
 
     var targetPriceReached = dataPoint.close >= targetSellPrice;
-    var averageReachedAndHeldTooLong = daysHeld >= 30 && dataPoint.close >= averagePositionCostBasis;
+    var averageReachedAndHeldTooLong = daysHeld >= maxDaysHeld && dataPoint.close >= averagePositionCostBasis;
 
     if (previousPercentChange > 0 && percentChange > 0) {
         sequentialIncreaseDays++;
