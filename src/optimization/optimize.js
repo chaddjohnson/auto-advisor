@@ -26,22 +26,22 @@ var startingBalance = balance;
 var commission = 4.95;
 var investmentDivisor;
 var baseInvestment;
-var sellTriggerProfitPercentage;
+var stopLossThreshold;
 var lastBuyDate;
 var longHoldCount;
 var maxLongHoldCount = 100;
 var investmentFactor;
 var daysHeld = 0;
-var sequentialBuyDays = 0;
-var sequentialIncreaseDays = 0;
+// var sequentialBuyDays = 0;
+// var sequentialIncreaseDays = 0;
 var maxDaysHeld = 0;
 
 console.log('Optimizing for ' + symbol);
 
 for (investmentDivisor=5; investmentDivisor<=12; investmentDivisor++) {
-    for (sellTriggerProfitPercentage=0.5; sellTriggerProfitPercentage<=3; sellTriggerProfitPercentage+=0.015625) {
-        for (investmentFactor=0.5; investmentFactor<=3; investmentFactor+=0.015625) {
-            for (maxDaysHeld=10; maxDaysHeld<=45; maxDaysHeld++) {
+    for (stopLossThreshold=0.1; stopLossThreshold<=5; stopLossThreshold+=0.0625) {
+        for (investmentFactor=0.1; investmentFactor<=2.0; investmentFactor+=0.0625) {
+            for (maxDaysHeld=30; maxDaysHeld<=30; maxDaysHeld++) {
                 // Reset.
                 balance = 100000;
                 baseInvestment = startingBalance / investmentDivisor;
@@ -52,8 +52,8 @@ for (investmentDivisor=5; investmentDivisor<=12; investmentDivisor++) {
                 lastBuyDate = 0;
                 longHoldCount = 0;
                 daysHeld = 0;
-                sequentialBuyDays = 0;
-                sequentialIncreaseDays = 0;
+                // sequentialBuyDays = 0;
+                // sequentialIncreaseDays = 0;
 
                 var potentialMaxProfit = 0;
                 var potentialOptimalSettings = null;
@@ -75,7 +75,6 @@ for (investmentDivisor=5; investmentDivisor<=12; investmentDivisor++) {
 
                     var percentChange = ((dataPoint.close / previousPrice) - 1) * 100;
                     var averagePositionCostBasis = costBasisSum / shareSum;
-                    var targetSellPrice = averagePositionCostBasis * (1 + (sellTriggerProfitPercentage / 100));
 
                     daysHeld = Math.round((new Date(dataPoint.date) - new Date(lastBuyDate)) / 24 / 60 / 60 / 1000);
 
@@ -83,30 +82,30 @@ for (investmentDivisor=5; investmentDivisor<=12; investmentDivisor++) {
                         daysHeld = 0;
                     }
 
-                    var targetPriceReached = dataPoint.close >= targetSellPrice;
+                    var stopLossThresholdReached = percentChange <= stopLossThreshold * -1;
                     var averageReachedAndHeldTooLong = daysHeld >= maxDaysHeld && dataPoint.close >= averagePositionCostBasis;
 
-                    if (previousPercentChange > 0 && percentChange > 0) {
-                        sequentialIncreaseDays++;
-                    }
-                    else {
-                        sequentialIncreaseDays = 0;
-                    }
+                    // if (previousPercentChange > 0 && percentChange > 0) {
+                    //     sequentialIncreaseDays++;
+                    // }
+                    // else {
+                    //     sequentialIncreaseDays = 0;
+                    // }
 
-                    if (sequentialIncreaseDays >= 2) {
-                        sequentialBuyDays = 0;
-                    }
+                    // if (sequentialIncreaseDays >= 2) {
+                    //     sequentialBuyDays = 0;
+                    // }
 
                     previousPercentChange = percentChange;
 
-                    if (positions.length && (targetPriceReached || averageReachedAndHeldTooLong)) {
+                    if (positions.length && (stopLossThresholdReached || averageReachedAndHeldTooLong)) {
                         let grossProfit = (shareSum * dataPoint.close) - commission;
                         let netProfit = grossProfit - costBasisSum;
 
                         balance += grossProfit;
                         positions = [];
                         baseInvestment = balance / investmentDivisor;
-                        sequentialBuyDays = 0;
+                        // sequentialBuyDays = 0;
 
                         if (daysHeld > maxLongHoldCount) {
                             longHoldCount++;
@@ -121,7 +120,7 @@ for (investmentDivisor=5; investmentDivisor<=12; investmentDivisor++) {
 
                             potentialOptimalSettings = {
                                 investmentDivisor: investmentDivisor,
-                                sellTriggerProfitPercentage: sellTriggerProfitPercentage,
+                                stopLossThreshold: stopLossThreshold,
                                 investmentFactor: investmentFactor,
                                 maxLongHoldCount: maxLongHoldCount,
                                 maxDaysHeld: maxDaysHeld
@@ -129,9 +128,10 @@ for (investmentDivisor=5; investmentDivisor<=12; investmentDivisor++) {
                         }
                     }
 
-                    if (percentChange < 0 && sequentialBuyDays < 4) {
+                    if (percentChange > 0) {
                         let position = {};
-                        let investment = baseInvestment * (percentChange / investmentFactor) * -1;
+                        let investment = baseInvestment * (percentChange / investmentFactor);
+                        // let investment = Math.min(baseInvestment, Math.sqrt(percentChange * 0.5) * baseInvestment);
 
                         position.shares = Math.floor(investment / dataPoint.close);
                         position.pricePerShare = dataPoint.close;
@@ -141,12 +141,12 @@ for (investmentDivisor=5; investmentDivisor<=12; investmentDivisor++) {
                         if (balance - position.costBasis > 0 && position.shares > 0) {
                             positions.push(position);
 
-                            if (sequentialBuyDays === 0 || previousDate === lastBuyDate) {
-                                sequentialBuyDays++;
-                            }
-                            else {
-                                sequentialBuyDays = 0;
-                            }
+                            // if (sequentialBuyDays === 0 || previousDate === lastBuyDate) {
+                            //     sequentialBuyDays++;
+                            // }
+                            // else {
+                            //     sequentialBuyDays = 0;
+                            // }
 
                             balance -= position.costBasis;
                             lastBuyDate = dataPoint.date;
