@@ -24,15 +24,15 @@ var startingBalance = balance;
 var commission = 4.95;
 var investmentDivisor = 7;
 var baseInvestment = startingBalance / investmentDivisor;
-var sellTriggerProfitPercentage = 2.390625;
+var sellTriggerProfitPercentage = 2.4921875;
 var lastBuyDate = 0;
 var longHoldCount = 0;
 var maxLongHoldCount = 100;
-var investmentFactor = 0.671875;
+var investmentFactor = 0.734375;
 var daysHeld = 0;
 var sequentialBuyDays = 0;
 var sequentialIncreaseDays = 0;
-var maxDaysHeld = 13;
+var maxDaysHeld = 22;
 
 console.log('SYMBOL\tTYPE\tDATE\t\tCHANGE\tSHARES\tSHARE PRICE\tCOST\t\tGROSS\t\tNET\t\tBALANCE\t\tDAYS HELD');
 console.log('======\t======\t==============\t======\t======\t==============\t==============\t==============\t==============\t==============\t=========');
@@ -63,7 +63,7 @@ data.forEach(function(dataPoint) {
     }
 
     var targetPriceReached = dataPoint.close >= targetSellPrice;
-    var averageReachedAndHeldTooLong = daysHeld >= maxDaysHeld && dataPoint.close >= averagePositionCostBasis;
+    var heldTooLong = daysHeld >= maxDaysHeld;
 
     if (previousPercentChange > 0 && percentChange > 0) {
         sequentialIncreaseDays++;
@@ -78,7 +78,7 @@ data.forEach(function(dataPoint) {
 
     previousPercentChange = percentChange;
 
-    if (positions.length && (targetPriceReached || averageReachedAndHeldTooLong)) {
+    if (positions.length && (targetPriceReached || heldTooLong)) {
         let grossProfit = (shareSum * dataPoint.close) - commission;
         let netProfit = grossProfit - costBasisSum;
 

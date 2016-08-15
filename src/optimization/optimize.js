@@ -39,8 +39,8 @@ var maxDaysHeld = 0;
 console.log('Optimizing for ' + symbol);
 
 for (investmentDivisor=5; investmentDivisor<=12; investmentDivisor++) {
-    for (sellTriggerProfitPercentage=0.5; sellTriggerProfitPercentage<=3; sellTriggerProfitPercentage+=0.015625) {
-        for (investmentFactor=0.5; investmentFactor<=3; investmentFactor+=0.015625) {
+    for (sellTriggerProfitPercentage=0.5; sellTriggerProfitPercentage<=3.0; sellTriggerProfitPercentage+=0.0078125) {
+        for (investmentFactor=0.5; investmentFactor<=3.0; investmentFactor+=0.0078125) {
             for (maxDaysHeld=10; maxDaysHeld<=45; maxDaysHeld++) {
                 // Reset.
                 balance = 100000;
@@ -84,7 +84,7 @@ for (investmentDivisor=5; investmentDivisor<=12; investmentDivisor++) {
                     }
 
                     var targetPriceReached = dataPoint.close >= targetSellPrice;
-                    var averageReachedAndHeldTooLong = daysHeld >= maxDaysHeld && dataPoint.close >= averagePositionCostBasis;
+                    var heldTooLong = daysHeld >= maxDaysHeld;
 
                     if (previousPercentChange > 0 && percentChange > 0) {
                         sequentialIncreaseDays++;
@@ -99,7 +99,7 @@ for (investmentDivisor=5; investmentDivisor<=12; investmentDivisor++) {
 
                     previousPercentChange = percentChange;
 
-                    if (positions.length && (targetPriceReached || averageReachedAndHeldTooLong)) {
+                    if (positions.length && (targetPriceReached || heldTooLong)) {
                         let grossProfit = (shareSum * dataPoint.close) - commission;
                         let netProfit = grossProfit - costBasisSum;
 

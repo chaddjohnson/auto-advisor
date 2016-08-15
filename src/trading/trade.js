@@ -128,12 +128,12 @@ tasks.push(function(taskCallback) {
     var targetPriceReached = price >= targetSellPrice;
 
     // Determine whether the holding has been held too long but the break even price has been reached.
-    var heldTooLongAndBreakEvenReached = daysHeld >= config.maxDaysHeld && price >= averageHoldingCostBasis;
+    var heldTooLong = daysHeld >= config.maxDaysHeld;
 
     // Track cash prior to sell so that net profit can be calculated.
     var previousCash = cash;
 
-    if (holdingQty > 0 && (targetPriceReached || heldTooLongAndBreakEvenReached)) {
+    if (holdingQty > 0 && (targetPriceReached || heldTooLong)) {
         tradingClient.sell(config.symbol, holdingQty).then(function() {
             // Add a multi-second delay to let things settle.
             setTimeout(function() {
@@ -323,11 +323,6 @@ tasks.push(function(taskCallback) {
 
                         // Calculate the target sell price.
                         var targetSellPrice = averageHoldingCostBasis * (1 + (config.sellTriggerProfitPercentage / 100));
-
-                        // If the holding has been held too long, then the target price is the break even price.
-                        if (daysHeld >= config.maxDaysHeld) {
-                            targetSellPrice = averageHoldingCostBasis;
-                        }
 
                         // Update the cash available.
                         cash = data.cash;
