@@ -106,6 +106,9 @@ data.forEach(function(dataPoint) {
         if (balance - position.costBasis > 0 && position.shares > 0) {
             positions.push(position);
 
+            // Increment sequential buy days if it is zero OR the last buy happened the
+            // previous day. Reset it if this it not true, meaning two sequential buy
+            // days did not occur.
             if (sequentialBuyDays === 0 || previousDate === lastBuyDate) {
                 sequentialBuyDays++;
             }
