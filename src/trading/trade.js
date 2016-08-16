@@ -26,6 +26,7 @@ var quotes = [];
 var buyHistory = [];
 var sequentialBuyDays = 0;
 var sequentialIncreaseDays = 0;
+var lastSequentialIncreaseDate = '';
 var activityOccurred = false;
 
 // Set up the trading client.
@@ -202,6 +203,11 @@ tasks.push(function(taskCallback) {
 
             var lineParts = line.split(',');
 
+            // For the "test" client, filter out days in the future beyond the current quote date.
+            if (config.client === 'test' && new Date(lineParts[0]) > new Date(quoteDatetime)) {
+                return;
+            }
+
             quotes.push({
                 date: lineParts[0],
                 close: parseFloat(lineParts[4])
@@ -223,8 +229,8 @@ tasks.push(function(taskCallback) {
     var previousSequentialQuote = null;
 
     // Iterate through quotes to determine the number of sequential increase days.
-    quotes.forEach(function(quote) {
-        if (countingDone) {
+    quotes.forEach(function(quote, index) {
+        if (countingDone && lastSequentialIncreaseDate) {
             return;
         }
         if (!previousSequentialQuote) {
@@ -233,9 +239,16 @@ tasks.push(function(taskCallback) {
         }
 
         var percentChange = ((previousSequentialQuote.close / quote.close) - 1) * 100;
+        var previousPercentChange = quotes[index + 1] ? ((quote.close / quotes[index + 1].close) - 1) * 100 : 0;
 
-        if (percentChange > 0) {
-            sequentialIncreaseDays++;
+        if (previousPercentChange > 0 && percentChange > 0) {
+            if (!countingDone) {
+                sequentialIncreaseDays++;
+            }
+
+            if (!lastSequentialIncreaseDate) {
+                lastSequentialIncreaseDate = previousSequentialQuote.date;
+            }
         }
         else {
             countingDone = true;
@@ -287,8 +300,9 @@ tasks.push(function(taskCallback) {
         buyQuoteIndex++;
     });
 
-    // Zero out the sequential buy days if the sequential increase days is high enough.
-    if (sequentialIncreaseDays >= 2) {
+    // Zero out the sequential buy days if the sequential increase days is high enough
+    // OR if the lastSequentialIncreaseDate was after the last buy date.
+    if (sequentialIncreaseDays >= 2 || new Date(lastSequentialIncreaseDate) > new Date(buyHistory[0].date.match(/^\d{4}\-\d{2}\-\d{2}/)[0])) {
         sequentialBuyDays = 0;
     }
 
@@ -308,7 +322,7 @@ tasks.push(function(taskCallback) {
         // Track cash prior to sell so that net profit can be calculated.
         let previousCash = cash;
 
-        if (investment > cash) {
+        if (cash - costBasis <= 0) {
             return taskCallback(config.symbol + ' dropped ' + percentChange.toFixed(2) + '% since previous close from ' + formatDollars(previousClosePrice) + ' to ' + formatDollars(price) + '. Potential investment amount exceeds balance. Consider placing a manual trade.');
         }
 
