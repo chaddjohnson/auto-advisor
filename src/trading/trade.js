@@ -122,8 +122,7 @@ tasks.push(function(taskCallback) {
         }
     };
 
-    // request(options, function(error, response, body) {
-    require('fs').readFile('/tmp/quotes.csv', function(error, body) {
+    request(options, function(error, response, body) {
         if (error) {
             return taskCallback(error);
         }
