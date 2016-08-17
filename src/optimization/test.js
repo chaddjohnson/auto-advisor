@@ -59,9 +59,9 @@ data.forEach(function(dataPoint) {
     }
 
     var stopLossThresholdReached = dataPoint.close <= averagePositionCostBasis * (1 - (stopLossThreshold / 100));
-    var averageReachedAndHeldTooLong = daysHeld >= maxDaysHeld && dataPoint.close >= averagePositionCostBasis;
+    var heldTooLong = daysHeld >= maxDaysHeld;
 
-    if (positions.length && (stopLossThresholdReached || averageReachedAndHeldTooLong)) {
+    if (positions.length && (stopLossThresholdReached || heldTooLong)) {
         let grossProfit = (shareSum * dataPoint.close) - commission;
         let netProfit = grossProfit - costBasisSum;
 
