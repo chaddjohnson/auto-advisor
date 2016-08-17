@@ -7,6 +7,7 @@ if (process.argv.length < 2) {
 
 // Libraries
 var _ = require('lodash');
+var RsiIndicator = require('../../lib/indicators/rsi');
 
 // State
 var symbol = process.argv[2];
@@ -32,13 +33,14 @@ var maxLongHoldCount = 100;
 var investmentFactor;
 var daysHeld = 0;
 var maxDaysHeld = 0;
+var index = 0;
 
 console.log('Optimizing for ' + symbol);
 
-for (investmentDivisor=5; investmentDivisor<=12; investmentDivisor++) {
+for (investmentDivisor=6; investmentDivisor<=6; investmentDivisor++) {
     for (stopLossThreshold=0.1; stopLossThreshold<=5.0; stopLossThreshold+=0.125) {
         for (investmentFactor=0.1; investmentFactor<=2.0; investmentFactor+=0.125) {
-            for (maxDaysHeld=110; maxDaysHeld<=45; maxDaysHeld++) {
+            for (maxDaysHeld=30; maxDaysHeld<=30; maxDaysHeld++) {
                 // Reset.
                 balance = 100000;
                 baseInvestment = startingBalance / investmentDivisor;
@@ -49,6 +51,12 @@ for (investmentDivisor=5; investmentDivisor<=12; investmentDivisor++) {
                 longHoldCount = 0;
                 daysHeld = 0;
 
+                // Indicators
+                var indicators = {
+                    rsi: new RsiIndicator({length: 7}, {rsi: 'rsi'})
+                };
+
+                var cumulativeData = [];
                 var potentialMaxProfit = 0;
                 var potentialOptimalSettings = null;
 
@@ -59,6 +67,13 @@ for (investmentDivisor=5; investmentDivisor<=12; investmentDivisor++) {
                         return;
                     }
 
+                    cumulativeData.push(dataPoint);
+
+                    for (index in indicators) {
+                        indicators[index].setData(cumulativeData);
+                    }
+
+                    var studyTickValues = indicators.rsi.tick();
                     var costBasisSum = 0;
                     var shareSum = 0;
 
@@ -108,7 +123,7 @@ for (investmentDivisor=5; investmentDivisor<=12; investmentDivisor++) {
                         }
                     }
 
-                    if (percentChange > 0) {
+                    if (percentChange > 0 && studyTickValues.rsi < 70) {
                         let position = {};
                         let investment = baseInvestment * (percentChange / investmentFactor);
                         // let investment = Math.min(baseInvestment, Math.sqrt(percentChange * 0.5) * baseInvestment);

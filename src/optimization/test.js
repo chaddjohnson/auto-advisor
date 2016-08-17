@@ -7,6 +7,7 @@ if (process.argv.length < 3) {
 
 // Libraries
 var _ = require('lodash');
+var RsiIndicator = require('../../lib/indicators/rsi');
 
 // State
 var symbol = process.argv[2];
@@ -16,20 +17,27 @@ var positions = [];
 
 // Data
 var data = require('../../data/' + symbol + '.json');
+var cumulativeData = [];
 
 // Settings
 var balance = 100000;
 var startingBalance = balance;
 var commission = 4.95;
-var investmentDivisor = 9;
+var investmentDivisor = 6;
 var baseInvestment = startingBalance / investmentDivisor;
-var stopLossThreshold = 2.2890625;
+var stopLossThreshold = 3.85;
 var lastBuyDate = 0;
 var longHoldCount = 0;
 var maxLongHoldCount = 100;
-var investmentFactor = 0.4640625;
+var investmentFactor = 0.725;
 var daysHeld = 0;
-var maxDaysHeld = 17;
+var maxDaysHeld = 30;
+var index = 0;
+
+// Indicators
+var indicators = {
+    rsi: new RsiIndicator({length: 7}, {rsi: 'rsi'})
+};
 
 console.log('SYMBOL\tTYPE\tDATE\t\tCHANGE\tSHARES\tSHARE PRICE\tCOST\t\tGROSS\t\tNET\t\tBALANCE\t\tDAYS HELD');
 console.log('======\t======\t==============\t======\t======\t==============\t==============\t==============\t==============\t==============\t=========');
@@ -41,6 +49,13 @@ data.forEach(function(dataPoint) {
         return;
     }
 
+    cumulativeData.push(dataPoint);
+
+    for (index in indicators) {
+        indicators[index].setData(cumulativeData);
+    }
+
+    var studyTickValues = indicators.rsi.tick();
     var costBasisSum = 0;
     var shareSum = 0;
 
@@ -76,7 +91,7 @@ data.forEach(function(dataPoint) {
         console.log(symbol + '\t' + 'SELL' + '\t' + dataPoint.date + '\t' + percentChange.toFixed(2) + '\t' + shareSum + '\t$' + dataPoint.close.toFixed(4) + '\t\t\t$' + grossProfit.toFixed(2) + '  \t$' + netProfit.toFixed(2) + '  \t$' + balance.toFixed(2) + '\t' + daysHeld);
     }
 
-    if (percentChange > 0) {
+    if (percentChange > 0 && studyTickValues.rsi < 70) {
         let position = {};
         let investment = baseInvestment * (percentChange / investmentFactor);
 
