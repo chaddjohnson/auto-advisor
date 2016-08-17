@@ -24,14 +24,12 @@ var startingBalance = balance;
 var commission = 4.95;
 var investmentDivisor = 7;
 var baseInvestment = startingBalance / investmentDivisor;
-var sellTriggerProfitPercentage = 2.4921875;
+var sellTriggerProfitPercentage = 2.5;
 var lastBuyDate = 0;
 var longHoldCount = 0;
 var maxLongHoldCount = 100;
 var investmentFactor = 0.734375;
 var daysHeld = 0;
-var sequentialBuyDays = 0;
-var sequentialIncreaseDays = 0;
 var maxDaysHeld = 22;
 
 console.log('SYMBOL\tTYPE\tDATE\t\tCHANGE\tSHARES\tSHARE PRICE\tCOST\t\tGROSS\t\tNET\t\tBALANCE\t\tDAYS HELD');
@@ -65,17 +63,6 @@ data.forEach(function(dataPoint) {
     var targetPriceReached = dataPoint.close >= targetSellPrice;
     var heldTooLong = daysHeld >= maxDaysHeld;
 
-    if (previousPercentChange > 0 && percentChange > 0) {
-        sequentialIncreaseDays++;
-    }
-    else {
-        sequentialIncreaseDays = 0;
-    }
-
-    if (sequentialIncreaseDays >= 2) {
-        sequentialBuyDays = 0;
-    }
-
     previousPercentChange = percentChange;
 
     if (positions.length && (targetPriceReached || heldTooLong)) {
@@ -85,7 +72,6 @@ data.forEach(function(dataPoint) {
         balance += grossProfit;
         positions = [];
         baseInvestment = balance / investmentDivisor;
-        sequentialBuyDays = 0;
 
         if (daysHeld > maxLongHoldCount) {
             longHoldCount++;
@@ -94,7 +80,7 @@ data.forEach(function(dataPoint) {
         console.log(symbol + '\t' + 'SELL' + '\t' + dataPoint.date + '\t' + percentChange.toFixed(2) + '\t' + shareSum + '\t$' + dataPoint.close.toFixed(4) + '\t\t\t$' + grossProfit.toFixed(2) + '  \t$' + netProfit.toFixed(2) + '  \t$' + balance.toFixed(2) + '\t' + daysHeld);
     }
 
-    if (percentChange < 0 && sequentialBuyDays < 4) {
+    if (percentChange < 0) {
         let position = {};
         let investment = baseInvestment * (percentChange / investmentFactor) * -1;
 
@@ -105,16 +91,6 @@ data.forEach(function(dataPoint) {
         // Ensure adding the position will not exceed the balance.
         if (balance - position.costBasis > 0 && position.shares > 0) {
             positions.push(position);
-
-            // Increment sequential buy days if it is zero OR the last buy happened the
-            // previous day. Reset it if this it not true, meaning two sequential buy
-            // days did not occur.
-            if (sequentialBuyDays === 0 || previousDate === lastBuyDate) {
-                sequentialBuyDays++;
-            }
-            else {
-                sequentialBuyDays = 0;
-            }
 
             balance -= position.costBasis;
             lastBuyDate = dataPoint.date;

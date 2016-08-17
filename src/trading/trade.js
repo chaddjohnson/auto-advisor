@@ -22,11 +22,6 @@ var quoteDatetime = '';
 var holdingQty = 0;
 var holdingCostBasis = 0;
 var cash = 0;
-var quotes = [];
-var buyHistory = [];
-var sequentialBuyDays = 0;
-var sequentialIncreaseDays = 0;
-var lastSequentialIncreaseDate = '';
 var activityOccurred = false;
 
 // Set up the trading client.
@@ -39,7 +34,7 @@ var smsClient = new (require('../../lib/smsClient'))(config.sms);
 var tasks = [];
 
 // Delay between buy/sell and balance lookup.
-var delay = process.env.NODE_ENV === 'production' ? 60 * 1000 : 0;
+var delay = process.env.NODE_ENV === 'production' ? 30 * 1000 : 0;
 
 function formatDollars(number) {
     return '$' + number.toFixed(2).replace(/(\d)(?=(\d\d\d)+(?!\d))/g, '$1,');
@@ -84,8 +79,6 @@ tasks.push(function(taskCallback) {
         else {
             daysHeld = 0;
         }
-
-        buyHistory = data || [];
 
         taskCallback();
     }).catch(function(error) {
@@ -167,154 +160,12 @@ tasks.push(function(taskCallback) {
     }
 });
 
-// Download and parse stock data from Yahoo.
-tasks.push(function(taskCallback) {
-    // Do nothing if there are no positions held.
-    if (holdingQty === 0) {
-        return taskCallback();
-    }
-
-    var now = new Date();
-    var options = {
-        url: 'http://real-chart.finance.yahoo.com/table.csv?s=' + config.symbol + '&a=0&b=01&c=' + (now.getUTCFullYear() - 1) + '&d=' + now.getUTCMonth() + '&e=' + now.getUTCDate() + '&f=' + now.getUTCFullYear() + '&g=d&ignore=.csv',
-        headers: {
-            'User-Agent': 'Mozilla/5.0 (Macintosh; Intel Mac OS X 10_11_5) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/51.0.2704.103 Safari/537.36'
-        }
-    };
-
-    request(options, function(error, response, body) {
-        if (error) {
-            return taskCallback(error);
-        }
-
-        var lines = body.toString().split('\n');
-
-        if (lines[0] !== 'Date,Open,High,Low,Close,Volume,Adj Close') {
-            return taskCallback('Bad quote data.');
-        }
-
-        // Remove the header.
-        lines.shift();
-
-        lines.forEach(function(line, index) {
-            if (line.length === 0) {
-                return;
-            }
-
-            var lineParts = line.split(',');
-
-            // For the "test" client, filter out days in the future beyond the current quote date.
-            if (config.client === 'test' && new Date(lineParts[0]) > new Date(quoteDatetime)) {
-                return;
-            }
-
-            quotes.push({
-                date: lineParts[0],
-                close: parseFloat(lineParts[4])
-            });
-        });
-
-        taskCallback();
-    });
-});
-
-// Count sequential increase days.
-tasks.push(function(taskCallback) {
-    // Do nothing if there are no positions held.
-    if (holdingQty === 0) {
-        return taskCallback();
-    }
-
-    var countingDone = false;
-    var previousSequentialQuote = null;
-
-    // Iterate through quotes to determine the number of sequential increase days.
-    quotes.forEach(function(quote, index) {
-        if (countingDone && lastSequentialIncreaseDate) {
-            return;
-        }
-        if (!previousSequentialQuote) {
-            previousSequentialQuote = quote;
-            return;
-        }
-
-        var percentChange = ((previousSequentialQuote.close / quote.close) - 1) * 100;
-        var previousPercentChange = quotes[index + 1] ? ((quote.close / quotes[index + 1].close) - 1) * 100 : 0;
-
-        if (previousPercentChange > 0 && percentChange > 0) {
-            if (!countingDone) {
-                sequentialIncreaseDays++;
-            }
-
-            if (!lastSequentialIncreaseDate) {
-                lastSequentialIncreaseDate = previousSequentialQuote.date;
-            }
-        }
-        else {
-            countingDone = true;
-        }
-
-        previousSequentialQuote = quote;
-    });
-
-    taskCallback();
-});
-
-// Count sequential buy days.
-tasks.push(function(taskCallback) {
-    // Do nothing if there are no positions held.
-    if (holdingQty === 0) {
-        return taskCallback();
-    }
-
-    // Do nothing if there is no buy history.
-    if (!buyHistory || buyHistory.length === 0) {
-        return taskCallback();
-    }
-
-    var countingDone = false;
-    var buyQuoteIndex = -1;
-
-    // Find the quote index of the most recent buy.
-    quotes.forEach(function(quote, index) {
-        if (quote.date === buyHistory[0].date.match(/^\d{4}\-\d{2}\-\d{2}/)[0]) {
-            buyQuoteIndex = index;
-        }
-    });
-
-    buyHistory.forEach(function(historyItem, index) {
-        if (countingDone) {
-            return;
-        }
-        if (!quotes[buyQuoteIndex]) {
-            return;
-        }
-
-        if (quotes[buyQuoteIndex].date === historyItem.date.match(/^\d{4}\-\d{2}\-\d{2}/)[0]) {
-            sequentialBuyDays++;
-        }
-        else {
-            countingDone = true;
-        }
-
-        buyQuoteIndex++;
-    });
-
-    // Zero out the sequential buy days if the sequential increase days is high enough
-    // OR if the lastSequentialIncreaseDate was after the last buy date.
-    if (sequentialIncreaseDays >= 2 || new Date(lastSequentialIncreaseDate) > new Date(buyHistory[0].date.match(/^\d{4}\-\d{2}\-\d{2}/)[0])) {
-        sequentialBuyDays = 0;
-    }
-
-    taskCallback();
-});
-
 // Buy?
 tasks.push(function(taskCallback) {
     var percentChange = ((price / previousClosePrice) - 1) * 100;
 
     // Possibly buy if the security has decreased in value.
-    if (percentChange < 0 && sequentialBuyDays < 4) {
+    if (percentChange < 0) {
         let investment = baseInvestment * (percentChange / config.investmentFactor) * -1;
         let qty = Math.floor(investment / price);
         let costBasis = (qty * price) + config.brokerage.commission;
@@ -371,9 +222,7 @@ tasks.push(function(taskCallback) {
 async.series(tasks, function(error) {
     if (error) {
         // Send an SMS.
-        smsClient.send(config.sms.toNumber, error.message || error);
-
-        return;
+        return smsClient.send(config.sms.toNumber, error.message || error);
     }
 
     if (!activityOccurred) {
