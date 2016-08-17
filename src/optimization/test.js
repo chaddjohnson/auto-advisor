@@ -12,7 +12,6 @@ var _ = require('lodash');
 var symbol = process.argv[2];
 var previousPrice = 0;
 var previousDate = 0;
-var previousPercentChange = 0;
 var positions = [];
 
 // Data
@@ -62,8 +61,6 @@ data.forEach(function(dataPoint) {
 
     var targetPriceReached = dataPoint.close >= targetSellPrice;
     var heldTooLong = daysHeld >= maxDaysHeld;
-
-    previousPercentChange = percentChange;
 
     if (positions.length && (targetPriceReached || heldTooLong)) {
         let grossProfit = (shareSum * dataPoint.close) - commission;
