@@ -7,6 +7,7 @@ if (process.argv.length < 3) {
 
 // Libraries
 var _ = require('lodash');
+var RsiIndicator = require('../../lib/indicators/rsi');
 
 // State
 var symbol = process.argv[2];
@@ -16,20 +17,27 @@ var positions = [];
 
 // Data
 var data = require('../../data/' + symbol + '.json');
+var cumulativeData = [];
 
 // Settings
 var balance = 100000;
 var startingBalance = balance;
 var commission = 4.95;
-var investmentDivisor = 7;
+var investmentDivisor = 6;
 var baseInvestment = startingBalance / investmentDivisor;
-var sellTriggerProfitPercentage = 2.5;
+var stopLossThreshold = 3.85;
 var lastBuyDate = 0;
 var longHoldCount = 0;
 var maxLongHoldCount = 100;
-var investmentFactor = 0.734375;
+var investmentFactor = 0.725;
 var daysHeld = 0;
-var maxDaysHeld = 22;
+var maxDaysHeld = 30;
+var index = 0;
+
+// Indicators
+var indicators = {
+    rsi: new RsiIndicator({length: 7}, {rsi: 'rsi'})
+};
 
 console.log('SYMBOL\tTYPE\tDATE\t\tCHANGE\tSHARES\tSHARE PRICE\tCOST\t\tGROSS\t\tNET\t\tBALANCE\t\tDAYS HELD');
 console.log('======\t======\t==============\t======\t======\t==============\t==============\t==============\t==============\t==============\t=========');
@@ -41,6 +49,13 @@ data.forEach(function(dataPoint) {
         return;
     }
 
+    cumulativeData.push(dataPoint);
+
+    for (index in indicators) {
+        indicators[index].setData(cumulativeData);
+    }
+
+    var studyTickValues = indicators.rsi.tick();
     var costBasisSum = 0;
     var shareSum = 0;
 
@@ -51,7 +66,6 @@ data.forEach(function(dataPoint) {
 
     var percentChange = ((dataPoint.close / previousPrice) - 1) * 100;
     var averagePositionCostBasis = costBasisSum / shareSum;
-    var targetSellPrice = averagePositionCostBasis * (1 + (sellTriggerProfitPercentage / 100));
 
     daysHeld = Math.round((new Date(dataPoint.date) - new Date(lastBuyDate)) / 24 / 60 / 60 / 1000);
 
@@ -59,10 +73,10 @@ data.forEach(function(dataPoint) {
         daysHeld = 0;
     }
 
-    var targetPriceReached = dataPoint.close >= targetSellPrice;
+    var stopLossThresholdReached = dataPoint.close <= averagePositionCostBasis * (1 - (stopLossThreshold / 100));
     var heldTooLong = daysHeld >= maxDaysHeld;
 
-    if (positions.length && (targetPriceReached || heldTooLong)) {
+    if (positions.length && (stopLossThresholdReached || heldTooLong)) {
         let grossProfit = (shareSum * dataPoint.close) - commission;
         let netProfit = grossProfit - costBasisSum;
 
@@ -77,9 +91,9 @@ data.forEach(function(dataPoint) {
         console.log(symbol + '\t' + 'SELL' + '\t' + dataPoint.date + '\t' + percentChange.toFixed(2) + '\t' + shareSum + '\t$' + dataPoint.close.toFixed(4) + '\t\t\t$' + grossProfit.toFixed(2) + '  \t$' + netProfit.toFixed(2) + '  \t$' + balance.toFixed(2) + '\t' + daysHeld);
     }
 
-    if (percentChange < 0) {
+    if (percentChange > 0 && studyTickValues.rsi < 70) {
         let position = {};
-        let investment = baseInvestment * (percentChange / investmentFactor) * -1;
+        let investment = baseInvestment * (percentChange / investmentFactor);
 
         position.shares = Math.floor(investment / dataPoint.close);
         position.pricePerShare = dataPoint.close;

@@ -7,12 +7,12 @@ if (process.argv.length < 2) {
 
 // Libraries
 var _ = require('lodash');
+var RsiIndicator = require('../../lib/indicators/rsi');
 
 // State
 var symbol = process.argv[2];
 var previousPrice = 0;
 var previousDate = 0;
-var previousPercentChange = 0;
 var positions = [];
 var maxProfit = 0;
 var optimalSettings = {};
@@ -26,31 +26,37 @@ var startingBalance = balance;
 var commission = 4.95;
 var investmentDivisor;
 var baseInvestment;
-var sellTriggerProfitPercentage;
+var stopLossThreshold;
 var lastBuyDate;
 var longHoldCount;
 var maxLongHoldCount = 100;
 var investmentFactor;
 var daysHeld = 0;
 var maxDaysHeld = 0;
+var index = 0;
 
 console.log('Optimizing for ' + symbol);
 
-for (investmentDivisor=5; investmentDivisor<=12; investmentDivisor++) {
-    for (sellTriggerProfitPercentage=0.5; sellTriggerProfitPercentage<=3.0; sellTriggerProfitPercentage+=0.0078125) {
-        for (investmentFactor=0.5; investmentFactor<=3.0; investmentFactor+=0.0078125) {
-            for (maxDaysHeld=10; maxDaysHeld<=45; maxDaysHeld++) {
+for (investmentDivisor=6; investmentDivisor<=6; investmentDivisor++) {
+    for (stopLossThreshold=0.1; stopLossThreshold<=5.0; stopLossThreshold+=0.125) {
+        for (investmentFactor=0.1; investmentFactor<=2.0; investmentFactor+=0.125) {
+            for (maxDaysHeld=30; maxDaysHeld<=30; maxDaysHeld++) {
                 // Reset.
                 balance = 100000;
                 baseInvestment = startingBalance / investmentDivisor;
                 positions = [];
                 previousPrice = 0;
                 previousDate = 0;
-                previousPercentChange = 0;
                 lastBuyDate = 0;
                 longHoldCount = 0;
                 daysHeld = 0;
 
+                // Indicators
+                var indicators = {
+                    rsi: new RsiIndicator({length: 7}, {rsi: 'rsi'})
+                };
+
+                var cumulativeData = [];
                 var potentialMaxProfit = 0;
                 var potentialOptimalSettings = null;
 
@@ -61,6 +67,13 @@ for (investmentDivisor=5; investmentDivisor<=12; investmentDivisor++) {
                         return;
                     }
 
+                    cumulativeData.push(dataPoint);
+
+                    for (index in indicators) {
+                        indicators[index].setData(cumulativeData);
+                    }
+
+                    var studyTickValues = indicators.rsi.tick();
                     var costBasisSum = 0;
                     var shareSum = 0;
 
@@ -71,7 +84,6 @@ for (investmentDivisor=5; investmentDivisor<=12; investmentDivisor++) {
 
                     var percentChange = ((dataPoint.close / previousPrice) - 1) * 100;
                     var averagePositionCostBasis = costBasisSum / shareSum;
-                    var targetSellPrice = averagePositionCostBasis * (1 + (sellTriggerProfitPercentage / 100));
 
                     daysHeld = Math.round((new Date(dataPoint.date) - new Date(lastBuyDate)) / 24 / 60 / 60 / 1000);
 
@@ -79,12 +91,10 @@ for (investmentDivisor=5; investmentDivisor<=12; investmentDivisor++) {
                         daysHeld = 0;
                     }
 
-                    var targetPriceReached = dataPoint.close >= targetSellPrice;
+                    var stopLossThresholdReached = dataPoint.close <= averagePositionCostBasis * (1 - (stopLossThreshold / 100));
                     var heldTooLong = daysHeld >= maxDaysHeld;
 
-                    previousPercentChange = percentChange;
-
-                    if (positions.length && (targetPriceReached || heldTooLong)) {
+                    if (positions.length && (stopLossThresholdReached || heldTooLong)) {
                         let grossProfit = (shareSum * dataPoint.close) - commission;
                         let netProfit = grossProfit - costBasisSum;
 
@@ -105,7 +115,7 @@ for (investmentDivisor=5; investmentDivisor<=12; investmentDivisor++) {
 
                             potentialOptimalSettings = {
                                 investmentDivisor: investmentDivisor,
-                                sellTriggerProfitPercentage: sellTriggerProfitPercentage,
+                                stopLossThreshold: stopLossThreshold,
                                 investmentFactor: investmentFactor,
                                 maxLongHoldCount: maxLongHoldCount,
                                 maxDaysHeld: maxDaysHeld
@@ -113,9 +123,10 @@ for (investmentDivisor=5; investmentDivisor<=12; investmentDivisor++) {
                         }
                     }
 
-                    if (percentChange < 0) {
+                    if (percentChange > 0 && studyTickValues.rsi < 70) {
                         let position = {};
-                        let investment = baseInvestment * (percentChange / investmentFactor) * -1;
+                        let investment = baseInvestment * (percentChange / investmentFactor);
+                        // let investment = Math.min(baseInvestment, Math.sqrt(percentChange * 0.5) * baseInvestment);
 
                         position.shares = Math.floor(investment / dataPoint.close);
                         position.pricePerShare = dataPoint.close;
