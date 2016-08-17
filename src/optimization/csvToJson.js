@@ -18,6 +18,7 @@ request.get(url, function(error, response, body) {
         var quote = {};
 
         quote.date = lineParts[0];
+        quote.open = parseFloat(lineParts[1]);
         quote.high = parseFloat(lineParts[2]);
         quote.close = parseFloat(lineParts[6]);
 
