@@ -12,7 +12,6 @@ var _ = require('lodash');
 var symbol = process.argv[2];
 var previousPrice = 0;
 var previousDate = 0;
-var previousPercentChange = 0;
 var positions = [];
 
 // Data
@@ -22,15 +21,15 @@ var data = require('../../data/' + symbol + '.json');
 var balance = 100000;
 var startingBalance = balance;
 var commission = 4.95;
-var investmentDivisor = 7;
+var investmentDivisor = 9;
 var baseInvestment = startingBalance / investmentDivisor;
-var stopLossThreshold = 2.5;
+var stopLossThreshold = 2.2890625;
 var lastBuyDate = 0;
 var longHoldCount = 0;
 var maxLongHoldCount = 100;
-var investmentFactor = 0.734375;
+var investmentFactor = 0.4640625;
 var daysHeld = 0;
-var maxDaysHeld = 22;
+var maxDaysHeld = 17;
 
 console.log('SYMBOL\tTYPE\tDATE\t\tCHANGE\tSHARES\tSHARE PRICE\tCOST\t\tGROSS\t\tNET\t\tBALANCE\t\tDAYS HELD');
 console.log('======\t======\t==============\t======\t======\t==============\t==============\t==============\t==============\t==============\t=========');
@@ -59,12 +58,10 @@ data.forEach(function(dataPoint) {
         daysHeld = 0;
     }
 
-    var stopLossThresholdReached = percentChange <= stopLossThreshold * -1;
-    var averageReachedAndHeldTooLong = daysHeld >= maxDaysHeld;
+    var stopLossThresholdReached = dataPoint.close <= averagePositionCostBasis * (1 - (stopLossThreshold / 100));
+    var averageReachedAndHeldTooLong = daysHeld >= maxDaysHeld && dataPoint.close >= averagePositionCostBasis;
 
-    previousPercentChange = percentChange;
-
-    if (positions.length && stopLossThresholdReached || averageReachedAndHeldTooLong) {
+    if (positions.length && (stopLossThresholdReached || averageReachedAndHeldTooLong)) {
         let grossProfit = (shareSum * dataPoint.close) - commission;
         let netProfit = grossProfit - costBasisSum;
 
