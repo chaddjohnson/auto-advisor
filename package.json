@@ -8,13 +8,9 @@
     "express": "^4.14.0",
     "lodash": "^4.13.1",
     "oauth": "^0.9.14",
-    "parse5": "^2.1.5",
     "q": "^1.4.1",
     "request": "^2.73.0",
-    "twilio": "^2.9.1",
-    "xmldom": "^0.1.22",
-    "xmlserializer": "^0.4.0",
-    "xpath": "0.0.23"
+    "twilio": "^2.9.1"
   },
   "devDependencies": {}
 }
