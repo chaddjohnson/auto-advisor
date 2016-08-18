@@ -39,7 +39,7 @@ var indicators = {
 var tasks = [];
 
 // Delay between buy/sell and balance lookup.
-var delay = process.env.NODE_ENV === 'production' ? 30 * 1000 : 0;
+var delay = process.env.NODE_ENV === 'production' ? 60 * 1000 : 0;
 
 function formatDollars(number) {
     return '$' + number.toFixed(2).replace(/(\d)(?=(\d\d\d)+(?!\d))/g, '$1,');
