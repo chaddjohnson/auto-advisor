@@ -209,7 +209,7 @@ tasks.push(function(taskCallback) {
     var stopLossThresholdReached = quote.price <= averageHoldingCostBasis * (1 - (config.stopLossThreshold / 100));
 
     // Determine whether the holding has been held too long.
-    var heldTooLong = daysHeld >= config.maxDaysHeld;
+    var heldTooLong = daysHeld >= config.maxDaysHeld && quote.price >= averageHoldingCostBasis;
 
     // Track cash prior to sell so that net profit can be calculated.
     var previousCash = cash;
