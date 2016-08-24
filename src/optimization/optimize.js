@@ -40,7 +40,7 @@ console.log('Optimizing for ' + symbol);
 for (investmentDivisor=6; investmentDivisor<=6; investmentDivisor++) {
     for (stopLossThreshold=0.1; stopLossThreshold<=5.0; stopLossThreshold+=0.125) {
         for (investmentFactor=0.1; investmentFactor<=2.0; investmentFactor+=0.125) {
-            for (maxDaysHeld=30; maxDaysHeld<=30; maxDaysHeld++) {
+            for (maxDaysHeld=31; maxDaysHeld<=31; maxDaysHeld++) {
                 // Reset.
                 balance = 100000;
                 baseInvestment = startingBalance / investmentDivisor;
@@ -53,7 +53,7 @@ for (investmentDivisor=6; investmentDivisor<=6; investmentDivisor++) {
 
                 // Indicators
                 var indicators = {
-                    rsi: new RsiIndicator({length: 7}, {rsi: 'rsi'})
+                    rsi: new RsiIndicator({length: 5}, {rsi: 'rsi'})
                 };
 
                 var cumulativeData = [];

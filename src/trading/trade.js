@@ -32,7 +32,7 @@ var smsClient = new (require('../../lib/smsClient'))(config.sms);
 
 // Set up indicators.
 var indicators = {
-    rsi: new RsiIndicator({length: 7}, {rsi: 'rsi'})
+    rsi: new RsiIndicator({length: 5}, {rsi: 'rsi'})
 };
 
 // Synchronous tasks to execute.

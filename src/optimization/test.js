@@ -25,18 +25,18 @@ var startingBalance = balance;
 var commission = 4.95;
 var investmentDivisor = 6;
 var baseInvestment = startingBalance / investmentDivisor;
-var stopLossThreshold = 3.85;
+var stopLossThreshold = 3.35;
 var lastBuyDate = 0;
 var longHoldCount = 0;
 var maxLongHoldCount = 100;
 var investmentFactor = 0.725;
 var daysHeld = 0;
-var maxDaysHeld = 30;
+var maxDaysHeld = 31;
 var index = 0;
 
 // Indicators
 var indicators = {
-    rsi: new RsiIndicator({length: 7}, {rsi: 'rsi'})
+    rsi: new RsiIndicator({length: 5}, {rsi: 'rsi'})
 };
 
 console.log('SYMBOL\tTYPE\tDATE\t\tCHANGE\tSHARES\tSHARE PRICE\tCOST\t\tGROSS\t\tNET\t\tBALANCE\t\tDAYS HELD');
