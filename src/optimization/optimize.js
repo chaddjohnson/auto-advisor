@@ -40,7 +40,7 @@ console.log('Optimizing for ' + symbol);
 for (investmentDivisor=6; investmentDivisor<=6; investmentDivisor++) {
     for (stopLossThreshold=0.1; stopLossThreshold<=5.0; stopLossThreshold+=0.125) {
         for (investmentFactor=0.1; investmentFactor<=2.0; investmentFactor+=0.125) {
-            for (maxDaysHeld=31; maxDaysHeld<=31; maxDaysHeld++) {
+            for (maxDaysHeld=30; maxDaysHeld<=30; maxDaysHeld++) {
                 // Reset.
                 balance = 100000;
                 baseInvestment = startingBalance / investmentDivisor;
