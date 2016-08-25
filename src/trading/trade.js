@@ -20,6 +20,7 @@ var daysHeld = 0;
 var holdingQty = 0;
 var holdingCostBasis = 0;
 var cash = 0;
+var accountValue = 0;
 var quote = {};
 var historicalQuotes = [];
 var activityOccurred = false;
@@ -94,6 +95,7 @@ tasks.push(function(taskCallback) {
 tasks.push(function(taskCallback) {
     tradingClient.getAccount().then(function(data) {
         cash = data.cash;
+        accountValue = data.value;
 
         holdingCostBasis = data.holdingCostBasis;
         holdingQty = data.holdingQty;
@@ -285,7 +287,7 @@ tasks.push(function(taskCallback) {
                         console.log(config.symbol + '\t' + 'BUY' + '\t' + quote.datetime.match(/^\d{4}\-\d{2}\-\d{2}/)[0] + '\t' + percentChange.toFixed(2) + '%\t' + qty + '\t' + formatDollars(quote.price) + '\t\t' + formatDollars(previousCash - cash) + ' \t\t\t' + formatDollars(cash));
 
                         // Send an SMS.
-                        smsClient.send(config.sms.toNumber, config.symbol + ' increased ' + percentChange.toFixed(2) + '% since previous close from ' + formatDollars(quote.previousClosePrice) + ' to ' + formatDollars(quote.price) + '. Successfully bought ' + qty + ' shares of ' + config.symbol + ' using ' + formatDollars(previousCash - cash) + '. Stop loss price is ' + formatDollars(stopLossPrice) + '. New balance is ' + formatDollars(cash) + '.');
+                        smsClient.send(config.sms.toNumber, config.symbol + ' increased ' + percentChange.toFixed(2) + '% since previous close from ' + formatDollars(quote.previousClosePrice) + ' to ' + formatDollars(quote.price) + '. Successfully bought ' + qty + ' shares of ' + config.symbol + ' using ' + formatDollars(previousCash - cash) + '. Stop loss price is ' + formatDollars(stopLossPrice) + '. New balance is ' + formatDollars(cash) + '. Account value is ' + formatDollars(data.value) + '.');
 
                         taskCallback();
                     }).catch(function(error) {
@@ -314,6 +316,6 @@ async.series(tasks, function(error) {
 
     if (!activityOccurred) {
         // Send an SMS.
-        smsClient.send(config.sms.toNumber, 'No buy or sell activity occurred today. Balance is ' + formatDollars(cash) + '.');
+        smsClient.send(config.sms.toNumber, 'No buy or sell activity occurred today. Balance is ' + formatDollars(cash) + '. Account value is ' + formatDollars(accountValue) + '.');
     }
 });
