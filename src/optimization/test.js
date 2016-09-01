@@ -91,7 +91,7 @@ data.forEach(function(dataPoint) {
         console.log(symbol + '\t' + 'SELL' + '\t' + dataPoint.date + '\t' + percentChange.toFixed(2) + '\t' + shareSum + '\t$' + dataPoint.close.toFixed(4) + '\t\t\t$' + grossProfit.toFixed(2) + '  \t$' + netProfit.toFixed(2) + '  \t$' + balance.toFixed(2) + '\t' + daysHeld);
     }
 
-    if (studyTickValues.rsi && studyTickValues.rsi < 70) {
+    if (percentChange !== 0 && studyTickValues.rsi && studyTickValues.rsi < 70) {
         let position = {};
         let investment = Math.sqrt(Math.abs(percentChange) / 1) * baseInvestment;
 

@@ -121,7 +121,7 @@ for (investmentDivisor=5; investmentDivisor<=5; investmentDivisor++) {
                     }
                 }
 
-                if (studyTickValues.rsi && studyTickValues.rsi < 70) {
+                if (percentChange !== 0 && studyTickValues.rsi && studyTickValues.rsi < 70) {
                     let position = {};
                     let investment = Math.sqrt(Math.abs(percentChange) / 1) * baseInvestment;
 
