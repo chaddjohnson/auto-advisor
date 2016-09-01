@@ -90,10 +90,10 @@ for (investmentDivisor=5; investmentDivisor<=5; investmentDivisor++) {
                     daysHeld = 0;
                 }
 
-                var targetPriceReached = dataPoint.close >= targetSellPrice;
+                var targetSellPriceReached = dataPoint.close >= targetSellPrice;
                 var stopLossThresholdReached = dataPoint.close <= averagePositionCostBasis * (1 - (stopLossThreshold / 100));
 
-                if (positions.length && (stopLossThresholdReached || targetPriceReached)) {
+                if (positions.length && (stopLossThresholdReached || targetSellPriceReached)) {
                     let grossProfit = (shareSum * dataPoint.close) - commission;
                     let netProfit = grossProfit - costBasisSum;
 
