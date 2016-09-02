@@ -36,9 +36,9 @@ var index = 0;
 
 console.log('Optimizing for ' + symbol);
 
-for (investmentDivisor=5; investmentDivisor<=5; investmentDivisor++) {
-    for (stopLossThreshold=0.1; stopLossThreshold<=5.0; stopLossThreshold+=0.125) {
-        for (sellTriggerProfitPercentage=0.1; sellTriggerProfitPercentage<=4.0; sellTriggerProfitPercentage+=0.125) {
+for (investmentDivisor=4; investmentDivisor<=15; investmentDivisor++) {
+    for (stopLossThreshold=0.1; stopLossThreshold<=5.0; stopLossThreshold+=0.03125) {
+        for (sellTriggerProfitPercentage=0.1; sellTriggerProfitPercentage<=4.0; sellTriggerProfitPercentage+=0.03125) {
             // Reset.
             balance = 100000;
             baseInvestment = startingBalance / investmentDivisor;
