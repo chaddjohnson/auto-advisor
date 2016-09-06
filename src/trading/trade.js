@@ -232,7 +232,7 @@ tasks.push(function(taskCallback) {
 
     // Possibly buy if it's not a bad time to buy.
     if (percentChange !== 0 && quote.rsi && quote.rsi < 70) {
-        let investment = Math.sqrt(Math.abs(percentChange) / 1) * baseInvestment;
+        let investment = Math.sqrt(Math.abs(percentChange)) * baseInvestment;
         let qty = Math.floor(investment / quote.price);
         let costBasis = (qty * quote.price) + config.brokerage.commission;
 

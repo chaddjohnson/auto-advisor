@@ -123,7 +123,7 @@ for (investmentDivisor=4; investmentDivisor<=15; investmentDivisor++) {
 
                 if (percentChange !== 0 && studyTickValues.rsi && studyTickValues.rsi < 70) {
                     let position = {};
-                    let investment = Math.sqrt(Math.abs(percentChange) / 1) * baseInvestment;
+                    let investment = Math.sqrt(Math.abs(percentChange)) * baseInvestment;
 
                     position.shares = Math.floor(investment / dataPoint.close);
                     position.pricePerShare = dataPoint.close;
