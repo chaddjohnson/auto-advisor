@@ -7,7 +7,6 @@ if (process.argv.length < 2) {
 
 // Libraries
 var _ = require('lodash');
-var RsiIndicator = require('../../lib/indicators/rsi');
 
 // State
 var symbol = process.argv[2];
@@ -36,9 +35,9 @@ var index = 0;
 
 console.log('Optimizing for ' + symbol);
 
-for (investmentDivisor=4; investmentDivisor<=15; investmentDivisor++) {
-    for (stopLossThreshold=0.1; stopLossThreshold<=5.0; stopLossThreshold+=0.03125) {
-        for (sellTriggerProfitPercentage=0.1; sellTriggerProfitPercentage<=4.0; sellTriggerProfitPercentage+=0.03125) {
+for (investmentDivisor=4; investmentDivisor<=4; investmentDivisor++) {
+    for (sellTriggerProfitPercentage=0.1; sellTriggerProfitPercentage<=4.0; sellTriggerProfitPercentage+=0.125) {
+        for (stopLossThreshold=0.1; stopLossThreshold<=6.0; stopLossThreshold+=0.125) {
             // Reset.
             balance = 100000;
             baseInvestment = startingBalance / investmentDivisor;
@@ -48,11 +47,6 @@ for (investmentDivisor=4; investmentDivisor<=15; investmentDivisor++) {
             lastBuyDate = 0;
             longHoldCount = 0;
             daysHeld = 0;
-
-            // Indicators
-            var indicators = {
-                rsi: new RsiIndicator({length: 5}, {rsi: 'rsi'})
-            };
 
             var cumulativeData = [];
             var potentialMaxProfit = 0;
@@ -67,11 +61,6 @@ for (investmentDivisor=4; investmentDivisor<=15; investmentDivisor++) {
 
                 cumulativeData.push(dataPoint);
 
-                for (index in indicators) {
-                    indicators[index].setData(cumulativeData);
-                }
-
-                var studyTickValues = indicators.rsi.tick();
                 var costBasisSum = 0;
                 var shareSum = 0;
 
@@ -121,7 +110,7 @@ for (investmentDivisor=4; investmentDivisor<=15; investmentDivisor++) {
                     }
                 }
 
-                if (percentChange !== 0 && studyTickValues.rsi && studyTickValues.rsi < 70) {
+                if (percentChange !== 0) {
                     let position = {};
                     let investment = Math.sqrt(Math.abs(percentChange)) * baseInvestment;
 

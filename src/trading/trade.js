@@ -11,7 +11,6 @@ var _ = require('lodash');
 var async = require('async');
 var request = require('request');
 var Holidays = require('date-holidays');
-var RsiIndicator = require('../../lib/indicators/rsi');
 
 // State and data
 var baseInvestment = 0;
@@ -20,7 +19,6 @@ var holdingCostBasis = 0;
 var cash = 0;
 var accountValue = 0;
 var quote = {};
-var historicalQuotes = [];
 var activityOccurred = false;
 
 // Set up the trading client.
@@ -28,11 +26,6 @@ var tradingClient = require('../../lib/tradingClients/base').factory(config.clie
 
 // Set up the SMS client.
 var smsClient = new (require('../../lib/smsClient'))(config.sms);
-
-// Set up indicators.
-var indicators = {
-    rsi: new RsiIndicator({length: 5}, {rsi: 'rsi'})
-};
 
 // Synchronous tasks to execute.
 var tasks = [];
@@ -85,92 +78,6 @@ tasks.push(function(taskCallback) {
     }).catch(function(error) {
         taskCallback(error);
     });
-});
-
-// Download and parse stock data from Yahoo.
-tasks.push(function(taskCallback) {
-    var now = new Date();
-    var options = {
-        url: 'http://real-chart.finance.yahoo.com/table.csv?s=' + config.symbol + '&a=0&b=01&c=' + (now.getUTCFullYear() - 1) + '&d=' + now.getUTCMonth() + '&e=' + now.getUTCDate() + '&f=' + now.getUTCFullYear() + '&g=d&ignore=.csv',
-        headers: {
-            'User-Agent': 'Mozilla/5.0 (Macintosh; Intel Mac OS X 10_11_5) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/51.0.2704.103 Safari/537.36'
-        }
-    };
-
-    request(options, function(error, response, body) {
-        if (error) {
-            return taskCallback(error);
-        }
-
-        var lines = body.toString().split('\n');
-
-        if (lines[0] !== 'Date,Open,High,Low,Close,Volume,Adj Close') {
-            return taskCallback('Bad quote data.');
-        }
-
-        // Remove the header.
-        lines.shift();
-
-        lines.forEach(function(line, index) {
-            if (line.length === 0) {
-                return;
-            }
-
-            var lineParts = line.split(',');
-
-            // For the "test" client, filter out days in the future beyond the current quote date.
-            if (config.client === 'test' && new Date(lineParts[0]) > new Date(quote.datetime)) {
-                return;
-            }
-
-            historicalQuotes.push({
-                date: lineParts[0],
-                close: parseFloat(lineParts[4])
-            });
-        });
-
-        // Track quotes in ascending order.
-        historicalQuotes.reverse();
-
-        taskCallback();
-    });
-});
-
-// Tick indicators.
-tasks.push(function(taskCallback) {
-    var index = 0;
-    var cumulativeHistoricalQuotes = [];
-
-    // Go through all historical quotes available.
-    historicalQuotes.forEach(function(historicalQuote) {
-        cumulativeHistoricalQuotes.push(historicalQuote);
-
-        // Go through each indicator.
-        for (index in indicators) {
-            let indicatorProperty = '';
-
-            // Get output mappings.
-            let indicatorOutputs = indicators[index].getOutputMappings();
-
-            // Set data for indicators.
-            indicators[index].setData(cumulativeHistoricalQuotes);
-
-            // Tick the indicator.
-            let indicatorTickValues = indicators[index].tick();
-
-            // Grab each output for the indicator.
-            for (indicatorProperty in indicatorOutputs) {
-                if (indicatorTickValues && typeof indicatorTickValues[indicatorOutputs[indicatorProperty]] === 'number') {
-                    quote[indicatorOutputs[indicatorProperty]] = indicatorTickValues[indicatorOutputs[indicatorProperty]];
-                }
-                else {
-                    quote[indicatorOutputs[indicatorProperty]] = '';
-                }
-            }
-        }
-    });
-
-    taskCallback();
 });
 
 // Sell?
@@ -231,7 +138,7 @@ tasks.push(function(taskCallback) {
     var changeAction = percentChange >= 0 ? 'increased' : 'decreased';
 
     // Possibly buy if it's not a bad time to buy.
-    if (percentChange !== 0 && quote.rsi && quote.rsi < 70) {
+    if (percentChange !== 0) {
         let investment = Math.sqrt(Math.abs(percentChange)) * baseInvestment;
         let qty = Math.floor(investment / quote.price);
         let costBasis = (qty * quote.price) + config.brokerage.commission;
