@@ -27,7 +27,7 @@ var investmentDivisor;
 var baseInvestment;
 var sellTriggerProfitPercentage = 0;
 var stopLossThreshold;
-var lastBuyDate;
+var firstBuyDate;
 var longHoldCount;
 var maxLongHoldCount = 100;
 var daysHeld = 0;
@@ -44,7 +44,7 @@ for (investmentDivisor=4; investmentDivisor<=4; investmentDivisor++) {
             positions = [];
             previousPrice = 0;
             previousDate = 0;
-            lastBuyDate = 0;
+            firstBuyDate = 0;
             longHoldCount = 0;
             daysHeld = 0;
 
@@ -73,7 +73,7 @@ for (investmentDivisor=4; investmentDivisor<=4; investmentDivisor++) {
                 var averagePositionCostBasis = costBasisSum / shareSum;
                 var targetSellPrice = averagePositionCostBasis * (1 + (sellTriggerProfitPercentage / 100));
 
-                daysHeld = Math.round((new Date(dataPoint.date) - new Date(lastBuyDate)) / 24 / 60 / 60 / 1000);
+                daysHeld = Math.round((new Date(dataPoint.date) - new Date(firstBuyDate)) / 24 / 60 / 60 / 1000);
 
                 if (positions.length === 0) {
                     daysHeld = 0;
@@ -89,6 +89,7 @@ for (investmentDivisor=4; investmentDivisor<=4; investmentDivisor++) {
                     balance += grossProfit;
                     positions = [];
                     baseInvestment = balance / investmentDivisor;
+                    firstBuyDate = 0;
 
                     if (daysHeld > maxLongHoldCount) {
                         longHoldCount++;
@@ -123,8 +124,11 @@ for (investmentDivisor=4; investmentDivisor<=4; investmentDivisor++) {
                         positions.push(position);
 
                         balance -= position.costBasis;
-                        lastBuyDate = dataPoint.date;
-                        daysHeld = 0;
+
+                        if (!firstBuyDate) {
+                            firstBuyDate = dataPoint.date;
+                            daysHeld = 0;
+                        }
                     }
                 }
 
@@ -142,3 +146,4 @@ for (investmentDivisor=4; investmentDivisor<=4; investmentDivisor++) {
 
 console.log(parseFloat(maxProfit.toFixed(2)));
 console.log(JSON.stringify(optimalSettings));
+console.log();

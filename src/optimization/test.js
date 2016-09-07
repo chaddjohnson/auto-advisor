@@ -26,7 +26,7 @@ var investmentDivisor = 5;
 var baseInvestment = startingBalance / investmentDivisor;
 var sellTriggerProfitPercentage = 2.94375;
 var stopLossThreshold = 4.85;
-var lastBuyDate = 0;
+var firstBuyDate = 0;
 var longHoldCount = 0;
 var maxLongHoldCount = 100;
 var daysHeld = 0;
@@ -56,7 +56,7 @@ data.forEach(function(dataPoint) {
     var averagePositionCostBasis = costBasisSum / shareSum;
     var targetSellPrice = averagePositionCostBasis * (1 + (sellTriggerProfitPercentage / 100));
 
-    daysHeld = Math.round((new Date(dataPoint.date) - new Date(lastBuyDate)) / 24 / 60 / 60 / 1000);
+    daysHeld = Math.round((new Date(dataPoint.date) - new Date(firstBuyDate)) / 24 / 60 / 60 / 1000);
 
     if (positions.length === 0) {
         daysHeld = 0;
@@ -72,6 +72,7 @@ data.forEach(function(dataPoint) {
         balance += grossProfit;
         positions = [];
         baseInvestment = balance / investmentDivisor;
+        firstBuyDate = 0;
 
         if (daysHeld > maxLongHoldCount) {
             longHoldCount++;
@@ -93,8 +94,11 @@ data.forEach(function(dataPoint) {
             positions.push(position);
 
             balance -= position.costBasis;
-            lastBuyDate = dataPoint.date;
-            daysHeld = 0;
+
+            if (!firstBuyDate) {
+                firstBuyDate = dataPoint.date;
+                daysHeld = 0;
+            }
 
             console.log(symbol + '\t' + 'BUY' + '\t' + dataPoint.date + '\t' + percentChange.toFixed(2) + '\t' + position.shares + '\t$' + position.pricePerShare.toFixed(4) + '\t  $' + position.costBasis.toFixed(2) + '\t\t\t\t\t  $' + balance.toFixed(2));
         }
