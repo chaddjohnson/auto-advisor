@@ -72,7 +72,7 @@ var bestPhenotype = geneticAlgorithm.best();
 // Show the results.
 process.stdout.write('\n');
 console.log(JSON.stringify(bestPhenotype));
-console.log(backtest(bestPhenotype).toFixed(2));
+console.log(backtest(bestPhenotype));
 process.stdout.write('\n');
 
 
@@ -154,7 +154,7 @@ function crossoverFunction(phenotypeA, phenotypeB) {
 }
 
 function fitnessFunction(phenotype) {
-    var fitness = backtest(phenotype);
+    var fitness = backtest(phenotype).profit;
 
     // Use phenotype and possibly some other information to determine
     // the fitness number. Higher is better, lower is worse.
@@ -181,6 +181,7 @@ function backtest(phenotype) {
     var balance = 100000;
     var startingBalance = balance;
     var lastSellBalance = balance;
+    var loss = 0;
     var commission = 4.95;
     var baseInvestment = startingBalance / phenotype.investmentDivisor;
     var positions = [];
@@ -217,6 +218,10 @@ function backtest(phenotype) {
             positions = [];
             baseInvestment = balance / phenotype.investmentDivisor;
             lastSellBalance = balance;
+
+            if (netProfit < 0) {
+                loss += netProfit * -1;
+            }
         }
 
         if (percentChange !== 0 && percentChange > phenotype.minPercentChangeBuy && percentChange < phenotype.maxPercentChangeBuy) {
@@ -244,7 +249,10 @@ function backtest(phenotype) {
         recentLargeChangeCounter--;
     });
 
-    return lastSellBalance - startingBalance;
+    return {
+        profit: lastSellBalance - startingBalance,
+        loss: loss
+    };
 }
 
 function generateRandomNumber(min, max, decimals) {
