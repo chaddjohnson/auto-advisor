@@ -38,12 +38,12 @@ var population = [];
 // Create an initial, randomized population.
 _.times(generateRandomNumber(1, 10), function(index) {
     population.push({
-        investmentDivisor: generateRandomNumber(3, 20),
-        sellTriggerProfitPercentage: generateRandomNumber(0.05, 5.0, 5),
+        investmentDivisor: generateRandomNumber(3.0, 20.0, 5),
+        sellTriggerProfitPercentage: generateRandomNumber(0.05, 6.0, 5),
         stopLossThreshold: generateRandomNumber(0.05, 10.0, 5),
         recentLargeChangeCounterStart: generateRandomNumber(1, 10),
-        minPercentChangeBuy: generateRandomNumber(-10, 0, 2),
-        maxPercentChangeBuy: generateRandomNumber(0, 10, 2)
+        minPercentChangeBuy: generateRandomNumber(-10, 0, 5),
+        maxPercentChangeBuy: generateRandomNumber(0, 10, 5)
     });
 });
 
@@ -87,7 +87,7 @@ function mutationFunction(oldPhenotype) {
     // Use oldPhenotype and some random function to make a change to the phenotype.
     switch (propertyIndex) {
         case 0:
-            resultPhenotype.investmentDivisor = generateRandomNumber(3, 20);
+            resultPhenotype.investmentDivisor = generateRandomNumber(3.0, 20.0, 5);
             break;
 
         case 1:
@@ -103,11 +103,11 @@ function mutationFunction(oldPhenotype) {
             break;
 
         case 4:
-            resultPhenotype.minPercentChangeBuy = generateRandomNumber(-10, 0, 2);
+            resultPhenotype.minPercentChangeBuy = generateRandomNumber(-10, 0, 5);
             break;
 
         case 5:
-            resultPhenotype.maxPercentChangeBuy = generateRandomNumber(0, 10, 2);
+            resultPhenotype.maxPercentChangeBuy = generateRandomNumber(0, 10, 5);
             break;
     }
 

@@ -15,7 +15,7 @@ var positions = [];
 var data = require('../../data/' + symbol + '.json');
 
 // Settings
-var phenotype = {"investmentDivisor":3,"sellTriggerProfitPercentage":5.11959,"stopLossThreshold":5.5635,"recentLargeChangeCounterStart":3,"minPercentChangeBuy":-3.87,"maxPercentChangeBuy":2.77};
+var phenotype = {"investmentDivisor":3.86515,"sellTriggerProfitPercentage":5.21139,"stopLossThreshold":5.71168,"recentLargeChangeCounterStart":3,"minPercentChangeBuy":-3.8701,"maxPercentChangeBuy":7.17786};
 var balance = 100000;
 var startingBalance = balance;
 var commission = 4.95;
@@ -26,6 +26,7 @@ var maxLongHoldCount = 100;
 var daysHeld = 0;
 var index = 0;
 var recentLargeChangeCounter = 0;
+var loss = 0;
 
 console.log('SYMBOL\tTYPE\tDATE\t\tCHANGE\tSHARES\tSHARE PRICE\tCOST\t\tGROSS\t\tNET\t\tBALANCE\t\tDAYS HELD');
 console.log('======\t======\t==============\t======\t======\t==============\t==============\t==============\t==============\t==============\t=========');
@@ -48,15 +49,14 @@ data.forEach(function(dataPoint) {
     var percentChange = ((dataPoint.close / previousPrice) - 1) * 100;
     var averagePositionCostBasis = costBasisSum / shareSum;
     var targetSellPrice = averagePositionCostBasis * (1 + (phenotype.sellTriggerProfitPercentage / 100));
+    var targetSellPriceReached = dataPoint.close >= targetSellPrice;
+    var stopLossThresholdReached = dataPoint.close <= averagePositionCostBasis * (1 - (phenotype.stopLossThreshold / 100));
 
     daysHeld = Math.round((new Date(dataPoint.date) - new Date(firstBuyDate)) / 24 / 60 / 60 / 1000);
 
     if (positions.length === 0) {
         daysHeld = 0;
     }
-
-    var targetSellPriceReached = dataPoint.close >= targetSellPrice;
-    var stopLossThresholdReached = dataPoint.close <= averagePositionCostBasis * (1 - (phenotype.stopLossThreshold / 100));
 
     if (positions.length && (stopLossThresholdReached || targetSellPriceReached)) {
         let grossProfit = (shareSum * dataPoint.close) - commission;
@@ -69,6 +69,10 @@ data.forEach(function(dataPoint) {
 
         if (daysHeld > maxLongHoldCount) {
             longHoldCount++;
+        }
+
+        if (netProfit < 0) {
+            loss += netProfit * -1;
         }
 
         console.log(symbol + '\t' + 'SELL' + '\t' + dataPoint.date + '\t' + percentChange.toFixed(2) + '\t' + shareSum + '\t$' + dataPoint.close.toFixed(4) + '\t\t\t$' + grossProfit.toFixed(2) + '  \t$' + netProfit.toFixed(2) + '  \t$' + balance.toFixed(2) + '\t' + daysHeld);
@@ -108,3 +112,4 @@ data.forEach(function(dataPoint) {
 });
 
 console.log('\nLong holds: ' + longHoldCount);
+console.log('\nLoss: ' + loss.toFixed(2));
