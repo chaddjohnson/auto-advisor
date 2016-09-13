@@ -15,7 +15,7 @@ var positions = [];
 var data = require('../../data/' + symbol + '.json');
 
 // Settings
-var phenotype = {"investmentDivisor":3.86515,"sellTriggerProfitPercentage":5.21139,"stopLossThreshold":5.71168,"recentLargeChangeCounterStart":3,"minPercentChangeBuy":-3.8701,"maxPercentChangeBuy":7.17786};
+var phenotype = {"investmentDivisor":4.751,"sellTriggerProfitPercentage":5.12712,"stopLossThreshold":7.25516,"recentLargeChangeCounterStart":4,"minPercentChangeBuy":-6.9766,"maxPercentChangeBuy":6.57942};
 var balance = 100000;
 var startingBalance = balance;
 var commission = 4.95;
