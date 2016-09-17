@@ -120,7 +120,7 @@ tasks.push(function(taskCallback) {
 
             historicalQuotes.push({
                 date: lineParts[0],
-                close: parseFloat(lineParts[4])
+                close: parseFloat(lineParts[6])
             });
         });
 
