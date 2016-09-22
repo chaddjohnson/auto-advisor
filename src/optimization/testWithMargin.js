@@ -16,8 +16,9 @@ var data = require('../../data/' + symbol + '.json');
 
 // Settings
 var phenotype = {"investmentDivisor":4.751,"sellTriggerProfitPercentage":5.12712,"stopLossThreshold":7.25516,"recentLargeChangeCounterStart":4,"minPercentChangeBuy":-6.9766,"maxPercentChangeBuy":6.57942};
-var balance = 100000;
+var balance = 100000 * 2;
 var startingBalance = balance;
+var balanceBeforeBuy = balance / 2;
 var commission = 4.95;
 var baseInvestment = startingBalance / phenotype.investmentDivisor;
 var firstBuyDate = 0;
@@ -27,9 +28,11 @@ var daysHeld = 0;
 var index = 0;
 var recentLargeChangeCounter = 0;
 var loss = 0;
+var marginUsed = 0;
+var dateMarginUsed = 0;
 
-console.log('SYMBOL\tTYPE\tDATE\t\tCHANGE\tSHARES\tSHARE PRICE\tCOST\t\tGROSS\t\tNET\t\tBALANCE\t\tDAYS HELD');
-console.log('======\t======\t==============\t======\t======\t==============\t==============\t==============\t==============\t==============\t=========');
+console.log('SYMBOL\tTYPE\tDATE\t\tCHANGE\tSHARES\tSHARE PRICE\tCOST\t\tGROSS\t\tNET\t\tBALANCE\t\t\tDAYS HELD');
+console.log('======\t======\t==============\t======\t======\t==============\t==============\t==============\t==============\t==============\t\t=========');
 
 data.forEach(function(dataPoint) {
     if (!previousPrice) {
@@ -65,11 +68,22 @@ data.forEach(function(dataPoint) {
     if (positions.length && (stopLossThresholdReached || targetSellPriceReached)) {
         let grossProfit = (shareSum * dataPoint.close) - commission;
         let netProfit = grossProfit - costBasisSum;
+        let marginDays = 0;
+        let marginInterest = 0;
 
-        balance += grossProfit;
+        if (dateMarginUsed) {
+            marginDays = Math.round((new Date(dataPoint.date) - new Date(dateMarginUsed)) / 24 / 60 / 60 / 1000);
+            marginInterest = ((marginUsed * getMarginInterestRate(marginUsed)) / 365) * marginDays;
+        }
+
+        balance += grossProfit + netProfit;
+        balance -= marginInterest;
         positions = [];
         baseInvestment = balance / phenotype.investmentDivisor;
         firstBuyDate = 0;
+        balanceBeforeBuy = balance / 2;
+        marginUsed = 0;
+        dateMarginUsed = 0;
 
         if (daysHeld > maxLongHoldCount) {
             longHoldCount++;
@@ -79,7 +93,7 @@ data.forEach(function(dataPoint) {
             loss += netProfit * -1;
         }
 
-        console.log(symbol + '\t' + 'SELL' + '\t' + dataPoint.date + '\t' + percentChange.toFixed(2) + '\t' + shareSum + '\t$' + dataPoint.close.toFixed(4) + '\t\t\t$' + grossProfit.toFixed(2) + '  \t$' + netProfit.toFixed(2) + '  \t$' + balance.toFixed(2) + '\t' + daysHeld);
+        console.log(symbol + '\t' + 'SELL' + '\t' + dataPoint.date + '\t' + percentChange.toFixed(2) + '\t' + shareSum + '\t$' + dataPoint.close.toFixed(4) + '\t\t\t$' + grossProfit.toFixed(2) + '  \t$' + netProfit.toFixed(2) + '  \t$' + balance.toFixed(2) + ' ($' + (balance / 2).toFixed(2) + ')' + '\t' + daysHeld);
     }
 
     if (percentChange !== 0 && percentChange > phenotype.minPercentChangeBuy && percentChange < phenotype.maxPercentChangeBuy) {
@@ -102,6 +116,14 @@ data.forEach(function(dataPoint) {
                     daysHeld = 0;
                 }
 
+                if (balance < balanceBeforeBuy) {
+                    if (!dateMarginUsed) {
+                        dateMarginUsed = dataPoint.date;
+                    }
+
+                    marginUsed = Math.abs(balance - balanceBeforeBuy);
+                }
+
                 console.log(symbol + '\t' + 'BUY' + '\t' + dataPoint.date + '\t' + percentChange.toFixed(2) + '\t' + position.shares + '\t$' + position.pricePerShare.toFixed(4) + '\t  $' + position.costBasis.toFixed(2) + '\t\t\t\t\t  $' + balance.toFixed(2));
             }
         }
@@ -117,3 +139,24 @@ data.forEach(function(dataPoint) {
 
 console.log('\nLong holds: ' + longHoldCount);
 console.log('\nLoss: ' + loss.toFixed(2));
+
+function getMarginInterestRate(amount) {
+    if (amount < 5000) {
+        return 9 / 100;
+    }
+    else if (amount >= 5000 && amount < 50000) {
+        return 8 / 100;
+    }
+    else if (amount >= 50000 && amount < 100000) {
+        return 7 / 100;
+    }
+    else if (amount >= 100000 && amount < 250000) {
+        return 5.75 / 100;
+    }
+    else if (amount >= 250000 && amount < 500000) {
+        return 4.75 / 100;
+    }
+    else {
+        return 4.25 / 100;
+    }
+}

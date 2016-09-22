@@ -17,6 +17,7 @@ var baseInvestment = 0;
 var holdingQty = 0;
 var holdingCostBasis = 0;
 var cash = 0;
+var cashWithMargin = 0;
 var accountValue = 0;
 var quote = {};
 var historicalQuotes = [];
@@ -68,13 +69,14 @@ tasks.push(function(taskCallback) {
 tasks.push(function(taskCallback) {
     tradingClient.getAccount().then(function(data) {
         cash = data.cash;
+        cashWithMargin = data.cash + data.margin;
         accountValue = data.value;
 
         holdingCostBasis = data.holdingCostBasis;
         holdingQty = data.holdingQty;
 
         // Calculate baseInvestment.
-        baseInvestment = (cash + holdingCostBasis) / config.investmentDivisor;
+        baseInvestment = (cashWithMargin + holdingCostBasis) / config.investmentDivisor;
 
         taskCallback();
     }).catch(function(error) {
@@ -166,7 +168,7 @@ tasks.push(function(taskCallback) {
     var stopLossThresholdReached = quote.price <= averageHoldingCostBasis * (1 - (config.stopLossThreshold / 100));
 
     // Track cash prior to sell so that net profit can be calculated.
-    var previousCash = cash;
+    var previousCashWithMargin = cashWithMargin;
 
     if (holdingQty > 0 && (stopLossThresholdReached || targetSellPriceReached)) {
         tradingClient.sell(config.symbol, holdingQty).then(function() {
@@ -174,21 +176,22 @@ tasks.push(function(taskCallback) {
             setTimeout(function() {
                 // Get account updates.
                 tradingClient.getAccount().then(function(data) {
-                    var netProfit = data.cash - (holdingCostBasis + previousCash);
+                    var netProfit = ((data.cash + data.margin) - (holdingCostBasis + previousCashWithMargin));
 
                     // Update the cash available.
                     cash = data.cash;
+                    cashWithMargin = data.cash + data.margin;
 
                     // Recalculate the base investment.
-                    baseInvestment = cash / config.investmentDivisor;
+                    baseInvestment = cashWithMargin / config.investmentDivisor;
 
                     activityOccurred = true;
 
                     // Log what happened.
-                    console.log(config.symbol + '\t' + 'SELL' + '\t' + quote.datetime.match(/^\d{4}\-\d{2}\-\d{2}/)[0] + '\t' + percentChange.toFixed(2) + '%\t' + holdingQty + '\t' + formatDollars(quote.price) + '\t\t\t\t' + formatDollars(netProfit) + ' \t' + formatDollars(cash));
+                    console.log(config.symbol + '\t' + 'SELL' + '\t' + quote.datetime.match(/^\d{4}\-\d{2}\-\d{2}/)[0] + '\t' + percentChange.toFixed(2) + '%\t' + holdingQty + '\t' + formatDollars(quote.price) + '\t\t\t\t' + formatDollars(netProfit) + ' \t' + formatDollars(cashWithMargin) + ' (' + formatDollars(cash) + ')');
 
                     // Send an SMS.
-                    smsClient.send(config.sms.toNumber, 'Sold ' + holdingQty + ' shares of ' + config.symbol + ' at ~' + formatDollars(quote.price) + ' for ' + formatDollars(netProfit) + ' profit. New balance is ' + formatDollars(cash) + '.');
+                    smsClient.send(config.sms.toNumber, 'Sold ' + holdingQty + ' shares of ' + config.symbol + ' at ~' + formatDollars(quote.price) + ' for ' + formatDollars(netProfit) + ' profit. New balance is ' + formatDollars(cash) + '. Stock buying power is ' + cashWithMargin + '.');
 
                     taskCallback();
                 });
@@ -213,14 +216,14 @@ tasks.push(function(taskCallback) {
         let costBasis = (qty * quote.price) + config.brokerage.commission;
 
         // Track cash prior to sell so that net profit can be calculated.
-        let previousCash = cash;
+        let previousCashWithMargin = cashWithMargin;
 
-        if (cash - costBasis <= 0) {
+        if (cashWithMargin - costBasis <= 0) {
             return taskCallback(config.symbol + ' ' + changeAction + ' ' + percentChange.toFixed(2) + '% since previous close from ' + formatDollars(quote.previousClosePrice) + ' to ' + formatDollars(quote.price) + '. Potential investment amount exceeds balance. Consider placing a manual trade.');
         }
 
         // Ensure adding the holding will not go beyond the maximum investment amount.
-        if (cash - costBasis > 0 && qty > 0) {
+        if (cashWithMargin - costBasis > 0 && qty > 0) {
             tradingClient.buy(config.symbol, qty).then(function() {
                 // Add a multi-second delay to let things settle.
                 setTimeout(function() {
@@ -236,14 +239,15 @@ tasks.push(function(taskCallback) {
 
                         // Update the cash available.
                         cash = data.cash;
+                        cashWithMargin = data.cash + data.margin;
 
                         activityOccurred = true;
 
                         // Log what happened.
-                        console.log(config.symbol + '\t' + 'BUY' + '\t' + quote.datetime.match(/^\d{4}\-\d{2}\-\d{2}/)[0] + '\t' + percentChange.toFixed(2) + '%\t' + qty + '\t' + formatDollars(quote.price) + '\t\t' + formatDollars(previousCash - cash) + ' \t\t\t' + formatDollars(cash));
+                        console.log(config.symbol + '\t' + 'BUY' + '\t' + quote.datetime.match(/^\d{4}\-\d{2}\-\d{2}/)[0] + '\t' + percentChange.toFixed(2) + '%\t' + qty + '\t' + formatDollars(quote.price) + '\t\t' + formatDollars(previousCashWithMargin - cashWithMargin) + ' \t\t\t' + formatDollars(cashWithMargin));
 
                         // Send an SMS.
-                        smsClient.send(config.sms.toNumber, config.symbol + ' ' + changeAction + ' ' + percentChange.toFixed(2) + '% since previous close from ' + formatDollars(quote.previousClosePrice) + ' to ' + formatDollars(quote.price) + '. Bought ' + qty + ' shares of ' + config.symbol + ' using ' + formatDollars(previousCash - cash) + '. Target price is ' + formatDollars(targetSellPrice) + '. Stop loss price is ' + formatDollars(stopLossPrice) + '. New balance is ' + formatDollars(cash) + '. Account value is ' + formatDollars(data.value) + '.');
+                        smsClient.send(config.sms.toNumber, config.symbol + ' ' + changeAction + ' ' + percentChange.toFixed(2) + '% since previous close from ' + formatDollars(quote.previousClosePrice) + ' to ' + formatDollars(quote.price) + '. Bought ' + qty + ' shares of ' + config.symbol + ' using ' + formatDollars(previousCashWithMargin - cashWithMargin) + '. Target price is ' + formatDollars(targetSellPrice) + '. Stop loss price is ' + formatDollars(stopLossPrice) + '. New balance is ' + formatDollars(cash) + '. Stock buying power is ' + cashWithMargin + '. Account value is ' + formatDollars(data.value) + '.');
 
                         taskCallback();
                     }).catch(function(error) {
