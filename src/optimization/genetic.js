@@ -180,7 +180,6 @@ function fitnessFunction(phenotype) {
 function backtest(phenotype) {
     var balance = 100000;
     var startingBalance = balance;
-    var lastSellBalance = balance;
     var loss = 0;
     var commission = 4.95;
     var baseInvestment = startingBalance / phenotype.investmentDivisor;
@@ -188,6 +187,7 @@ function backtest(phenotype) {
     var previousPrice = 0;
     var previousDate = 0;
     var recentLargeChangeCounter = 0;
+    var accountValue = 0;
 
     data.forEach(function(dataPoint) {
         if (!previousPrice) {
@@ -217,7 +217,7 @@ function backtest(phenotype) {
             balance += grossProfit;
             positions = [];
             baseInvestment = balance / phenotype.investmentDivisor;
-            lastSellBalance = balance;
+            shareSum = 0;
 
             if (netProfit < 0) {
                 loss += netProfit * -1;
@@ -237,6 +237,7 @@ function backtest(phenotype) {
                 if (balance - position.costBasis > 0 && position.shares > 0) {
                     positions.push(position);
                     balance -= position.costBasis;
+                    shareSum += position.shares;
                 }
             }
         }
@@ -244,13 +245,16 @@ function backtest(phenotype) {
             recentLargeChangeCounter = phenotype.recentLargeChangeCounterStart;
         }
 
+        // Calculate current account value.
+        accountValue = balance + (shareSum * dataPoint.close);
+
         previousPrice = dataPoint.close;
         previousDate = dataPoint.date;
         recentLargeChangeCounter--;
     });
 
     return {
-        profit: lastSellBalance - startingBalance,
+        profit: accountValue - startingBalance,
         loss: loss
     };
 }
