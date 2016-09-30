@@ -55,9 +55,12 @@ app.get('/accounts/:id', function(request, response) {
     response.status(200).end(JSON.stringify({
         response: {
             accountbalance: {
+                buyingpower: {
+                    stock: (cash + margin).toString()
+                },
                 money: {
                     cash: cash.toString(),
-                    marginbalance: margin.toString()
+                    marginbalance: margin.toString(),
                 }
             },
             accountholdings: {
