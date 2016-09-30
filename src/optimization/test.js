@@ -64,7 +64,6 @@ data.forEach(function(dataPoint) {
         balance += grossProfit;
         positions = [];
         baseInvestment = balance / phenotype.investmentDivisor;
-        shareSum = 0;
         firstBuyDate = 0;
 
         if (netProfit < 0) {
@@ -72,6 +71,8 @@ data.forEach(function(dataPoint) {
         }
 
         console.log(symbol + '\t' + 'SELL' + '\t' + dataPoint.date + '\t' + percentChange.toFixed(2) + '\t' + shareSum + '\t$' + dataPoint.close.toFixed(4) + '\t\t\t$' + grossProfit.toFixed(2) + '  \t$' + netProfit.toFixed(2) + '  \t$' + balance.toFixed(2) + '\t' + daysHeld);
+
+        shareSum = 0;
     }
 
     if (percentChange !== 0 && percentChange > phenotype.minPercentChangeBuy && percentChange < phenotype.maxPercentChangeBuy) {
