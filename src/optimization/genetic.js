@@ -39,7 +39,7 @@ var population = [];
 _.times(generateRandomNumber(1, 10), function(index) {
     population.push({
         investmentDivisor: generateRandomNumber(3.0, 20.0, 5),
-        sellTriggerProfitPercentage: generateRandomNumber(0.05, 6.0, 5),
+        sellTriggerProfitPercentage: generateRandomNumber(0.05, 3.0, 5),
         stopLossThreshold: generateRandomNumber(0.05, 10.0, 5),
         recentLargeChangeCounterStart: generateRandomNumber(1, 10),
         minPercentChangeBuy: generateRandomNumber(-10, 0, 5),
@@ -72,7 +72,7 @@ var bestPhenotype = geneticAlgorithm.best();
 // Show the results.
 process.stdout.write('\n');
 console.log(JSON.stringify(bestPhenotype));
-console.log(backtest(bestPhenotype));
+console.log(JSON.stringify(backtest(bestPhenotype)));
 process.stdout.write('\n');
 
 
@@ -91,7 +91,7 @@ function mutationFunction(oldPhenotype) {
             break;
 
         case 1:
-            resultPhenotype.sellTriggerProfitPercentage = generateRandomNumber(0.05, 6.0, 5);
+            resultPhenotype.sellTriggerProfitPercentage = generateRandomNumber(0.05, 3.0, 5);
             break;
 
         case 2:
@@ -188,6 +188,9 @@ function backtest(phenotype) {
     var previousDate = 0;
     var recentLargeChangeCounter = 0;
     var accountValue = 0;
+    var firstBuyDate = 0;
+    var totalDaysHeld = 0;
+    var sellCount = 0;
 
     data.forEach(function(dataPoint) {
         if (!previousPrice) {
@@ -218,6 +221,9 @@ function backtest(phenotype) {
             positions = [];
             baseInvestment = balance / phenotype.investmentDivisor;
             shareSum = 0;
+            totalDaysHeld += Math.round((new Date(dataPoint.date) - new Date(firstBuyDate)) / 24 / 60 / 60 / 1000);
+            firstBuyDate = 0;
+            sellCount++;
 
             if (netProfit < 0) {
                 loss += netProfit * -1;
@@ -238,6 +244,10 @@ function backtest(phenotype) {
                     positions.push(position);
                     balance -= position.costBasis;
                     shareSum += position.shares;
+
+                    if (!firstBuyDate) {
+                        firstBuyDate = dataPoint.date;
+                    }
                 }
             }
         }
@@ -255,7 +265,9 @@ function backtest(phenotype) {
 
     return {
         profit: accountValue - startingBalance,
-        loss: loss
+        loss: loss,
+        sellCount: sellCount,
+        averageDaysHeld: totalDaysHeld / sellCount
     };
 }
 
