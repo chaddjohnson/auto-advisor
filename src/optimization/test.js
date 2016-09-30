@@ -15,9 +15,10 @@ var positions = [];
 var data = require('../../data/' + symbol + '.json');
 
 // Settings
-var phenotype = {"investmentDivisor":3.14365,"sellTriggerProfitPercentage":2.66697,"stopLossThreshold":5.58246,"recentLargeChangeCounterStart":3,"minPercentChangeBuy":-3.85875,"maxPercentChangeBuy":6.55289};
+var phenotype = {"investmentDivisor":3.1636,"sellTriggerProfitPercentage":2.65092,"stopLossThreshold":5.30614,"recentLargeChangeCounterStart":3,"minPercentChangeBuy":-3.86557,"maxPercentChangeBuy":6.45082};
 var balance = 100000;
 var startingBalance = balance;
+var originalBalance = balance;
 var commission = 4.95;
 var baseInvestment = startingBalance / phenotype.investmentDivisor;
 var firstBuyDate = 0;
@@ -62,6 +63,7 @@ data.forEach(function(dataPoint) {
         let netProfit = grossProfit - costBasisSum;
 
         balance += grossProfit;
+        originalBalance = balance;
         positions = [];
         baseInvestment = balance / phenotype.investmentDivisor;
         shareSum = 0;
@@ -78,10 +80,22 @@ data.forEach(function(dataPoint) {
         if (recentLargeChangeCounter <= 0) {
             let position = {};
             let investment = Math.sqrt(Math.abs(percentChange)) * baseInvestment;
+            let remainingBalance = balance - investment;
 
             position.shares = Math.floor(investment / dataPoint.close);
             position.pricePerShare = dataPoint.close;
             position.costBasis = (position.shares * position.pricePerShare) + commission;
+
+            // Is there only a little bit of cash remaining?
+            if (remainingBalance > 0 && remainingBalance / originalBalance < 0.1) {
+                // Invest the remaining balance since what remains likely won't
+                // be invested anyway.
+                investment = balance - commission;
+
+                // Recalculate quantity and cost basis.
+                position.shares = Math.floor(investment / dataPoint.close);
+                position.costBasis = (position.shares * position.pricePerShare) + commission;
+            }
 
             // Ensure adding the position will not exceed the balance.
             if (balance - position.costBasis > 0 && position.shares > 0) {
