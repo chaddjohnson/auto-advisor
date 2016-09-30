@@ -176,7 +176,7 @@ tasks.push(function(taskCallback) {
             setTimeout(function() {
                 // Get account updates.
                 tradingClient.getAccount().then(function(data) {
-                    var netProfit = ((data.cash + data.margin) - (holdingCostBasis + previousCashWithMargin));
+                    var netProfit = ((data.cash + data.margin) - (holdingCostBasis + previousCashWithMargin)) / 2;
 
                     // Update the cash available.
                     cash = data.cash;
