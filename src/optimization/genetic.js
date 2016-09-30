@@ -180,7 +180,6 @@ function fitnessFunction(phenotype) {
 function backtest(phenotype) {
     var balance = 100000;
     var startingBalance = balance;
-    var originalBalance = balance;
     var loss = 0;
     var commission = 4.95;
     var baseInvestment = startingBalance / phenotype.investmentDivisor;
@@ -219,7 +218,6 @@ function backtest(phenotype) {
             let netProfit = grossProfit - costBasisSum;
 
             balance += grossProfit;
-            originalBalance = balance;
             positions = [];
             baseInvestment = balance / phenotype.investmentDivisor;
             shareSum = 0;
@@ -236,22 +234,10 @@ function backtest(phenotype) {
             if (recentLargeChangeCounter <= 0) {
                 let position = {};
                 let investment = Math.sqrt(Math.abs(percentChange)) * baseInvestment;
-                let remainingBalance = balance - investment;
 
                 position.shares = Math.floor(investment / dataPoint.close);
                 position.pricePerShare = dataPoint.close;
                 position.costBasis = (position.shares * position.pricePerShare) + commission;
-
-                // Is there only a little bit of cash remaining?
-                if (remainingBalance > 0 && remainingBalance / originalBalance < 0.1) {
-                    // Invest the remaining balance since what remains likely won't
-                    // be invested anyway.
-                    investment = balance - commission;
-
-                    // Recalculate quantity and cost basis.
-                    position.shares = Math.floor(investment / dataPoint.close);
-                    position.costBasis = (position.shares * position.pricePerShare) + commission;
-                }
 
                 // Ensure adding the position will not exceed the balance.
                 if (balance - position.costBasis > 0 && position.shares > 0) {

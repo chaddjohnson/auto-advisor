@@ -209,23 +209,11 @@ tasks.push(function(taskCallback) {
     // Possibly buy if it's not a bad time to buy.
     if (percentChange !== 0 && recentLargeChangeCounter <= 0 && percentChange > config.minPercentChangeBuy && percentChange < config.maxPercentChangeBuy) {
         let investment = Math.sqrt(Math.abs(percentChange)) * baseInvestment;
-        let remainingBalance = cash - investment;
         let qty = Math.floor(investment / quote.price);
         let costBasis = (qty * quote.price) + config.brokerage.commission;
 
         // Track cash prior to sell so that net profit can be calculated.
         let previousCash = cash;
-
-        // Is there only a little bit of cash remaining?
-        if (remainingBalance > 0 && remainingBalance / (cash + holdingCostBasis) < 0.1) {
-            // Invest the remaining balance since what remains likely won't
-            // be invested anyway.
-            investment = cash - config.brokerage.commission;
-
-            // Recalculate quantity and cost basis.
-            qty = Math.floor(investment / quote.price);
-            costBasis = (qty * quote.price) + config.brokerage.commission;
-        }
 
         if (cash - costBasis <= 0) {
             return taskCallback(config.symbol + ' ' + changeAction + ' ' + percentChange.toFixed(2) + '% since previous close from ' + formatDollars(quote.previousClosePrice) + ' to ' + formatDollars(quote.price) + '. Potential investment amount exceeds balance. Consider placing a manual trade.');
