@@ -15,18 +15,17 @@ var positions = [];
 var data = require('../../data/' + symbol + '.json');
 
 // Settings
-var phenotype = {"investmentDivisor":4.751,"sellTriggerProfitPercentage":5.12712,"stopLossThreshold":7.25516,"recentLargeChangeCounterStart":4,"minPercentChangeBuy":-6.9766,"maxPercentChangeBuy":6.57942};
+var phenotype = {"investmentDivisor":3.14365,"sellTriggerProfitPercentage":2.66697,"stopLossThreshold":5.58246,"recentLargeChangeCounterStart":3,"minPercentChangeBuy":-3.85875,"maxPercentChangeBuy":6.55289};
 var balance = 100000;
 var startingBalance = balance;
 var commission = 4.95;
 var baseInvestment = startingBalance / phenotype.investmentDivisor;
 var firstBuyDate = 0;
-var longHoldCount = 0;
-var maxLongHoldCount = 100;
 var daysHeld = 0;
 var index = 0;
 var recentLargeChangeCounter = 0;
 var loss = 0;
+var accountValue = 0;
 
 console.log('SYMBOL\tTYPE\tDATE\t\tCHANGE\tSHARES\tSHARE PRICE\tCOST\t\tGROSS\t\tNET\t\tBALANCE\t\tDAYS HELD');
 console.log('======\t======\t==============\t======\t======\t==============\t==============\t==============\t==============\t==============\t=========');
@@ -69,11 +68,8 @@ data.forEach(function(dataPoint) {
         balance += grossProfit;
         positions = [];
         baseInvestment = balance / phenotype.investmentDivisor;
+        shareSum = 0;
         firstBuyDate = 0;
-
-        if (daysHeld > maxLongHoldCount) {
-            longHoldCount++;
-        }
 
         if (netProfit < 0) {
             loss += netProfit * -1;
@@ -94,8 +90,8 @@ data.forEach(function(dataPoint) {
             // Ensure adding the position will not exceed the balance.
             if (balance - position.costBasis > 0 && position.shares > 0) {
                 positions.push(position);
-
                 balance -= position.costBasis;
+                shareSum += position.shares;
 
                 if (!firstBuyDate) {
                     firstBuyDate = dataPoint.date;
@@ -110,10 +106,15 @@ data.forEach(function(dataPoint) {
         recentLargeChangeCounter = phenotype.recentLargeChangeCounterStart;
     }
 
+    // Calculate current account value.
+    accountValue = balance + (shareSum * dataPoint.close);
+
     previousPrice = dataPoint.close;
     previousDate = dataPoint.date;
     recentLargeChangeCounter--;
 });
 
-console.log('\nLong holds: ' + longHoldCount);
-console.log('\nLoss: ' + loss.toFixed(2));
+console.log();
+console.log(JSON.stringify(phenotype));
+console.log('Account Value: ' + accountValue.toFixed(2));
+console.log('Loss: ' + loss.toFixed(2));
