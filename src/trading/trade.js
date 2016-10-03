@@ -191,7 +191,7 @@ tasks.push(function(taskCallback) {
                     console.log(config.symbol + '\t' + 'SELL' + '\t' + quote.datetime.match(/^\d{4}\-\d{2}\-\d{2}/)[0] + '\t' + percentChange.toFixed(2) + '%\t' + holdingQty + '\t' + formatDollars(quote.price) + '\t\t\t\t' + formatDollars(netProfit) + ' \t' + formatDollars(buyingPower) + ' (' + formatDollars(cash) + ')');
 
                     // Send an SMS.
-                    smsClient.send(config.sms.toNumber, 'Sold ' + holdingQty + ' share(s) of ' + config.symbol + ' at ~' + formatDollars(quote.price) + ' for ' + formatDollars(netProfit) + ' profit.\n\nNew balance is ' + formatDollars(buyingPower) + ' (includes margin).\nAccount value is ' + formatDollars(cash) + '.\nStock buying power is ' + formatDollars(data.buyingPower) + '.');
+                    smsClient.send(config.sms.toNumber, 'Sold ' + holdingQty + ' share(s) of ' + config.symbol + ' at ~' + formatDollars(quote.price) + ' for ' + formatDollars(netProfit) + ' profit.\n\nAccount value is ' + formatDollars(cash) + '.\nStock buying power is ' + formatDollars(data.buyingPower) + '.');
 
                     taskCallback();
                 });
@@ -247,7 +247,7 @@ tasks.push(function(taskCallback) {
                         console.log(config.symbol + '\t' + 'BUY' + '\t' + quote.datetime.match(/^\d{4}\-\d{2}\-\d{2}/)[0] + '\t' + percentChange.toFixed(2) + '%\t' + qty + '\t' + formatDollars(quote.price) + '\t\t' + formatDollars(previousBuyingPower - data.buyingPower) + ' \t\t\t' + formatDollars(buyingPower));
 
                         // Send an SMS.
-                        smsClient.send(config.sms.toNumber, config.symbol + ' ' + changeAction + ' ' + percentChange.toFixed(2) + '% since previous close from ' + formatDollars(quote.previousClosePrice) + ' to ' + formatDollars(quote.price) + '. Bought ' + qty + ' share(s) of ' + config.symbol + ' using ' + formatDollars(previousBuyingPower - data.buyingPower) + '.\n\nTarget price is ' + formatDollars(targetSellPrice) + '.\nStop loss price is ' + formatDollars(stopLossPrice) + '.\nNew balance is ' + formatDollars(buyingPower) + ' (includes margin).\nAccount value is ' + formatDollars(data.value) + '.\nStock buying power is ' + formatDollars(data.buyingPower) + '.');
+                        smsClient.send(config.sms.toNumber, config.symbol + ' ' + changeAction + ' ' + percentChange.toFixed(2) + '% since previous close from ' + formatDollars(quote.previousClosePrice) + ' to ' + formatDollars(quote.price) + '. Bought ' + qty + ' share(s) of ' + config.symbol + ' using ' + formatDollars(previousBuyingPower - data.buyingPower) + '.\n\nTarget price is ' + formatDollars(targetSellPrice) + '.\nStop loss price is ' + formatDollars(stopLossPrice) + '.\nAccount value is ' + formatDollars(data.value) + '.\nStock buying power is ' + formatDollars(data.buyingPower) + '.');
 
                         taskCallback();
                     }).catch(function(error) {
