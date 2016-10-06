@@ -29,6 +29,7 @@ app.use(bodyParser.json());
 
 app.get('/quotes/:symbol', function(request, response) {
     var currentQuote = quotes[++quoteIndex];
+
     if (currentQuote) {
         response.status(200).end(JSON.stringify({
             response: {
@@ -52,6 +53,8 @@ app.get('/quotes/:symbol', function(request, response) {
 });
 
 app.get('/accounts/:id', function(request, response) {
+    var currentQuote = quotes[quoteIndex];
+
     response.status(200).end(JSON.stringify({
         response: {
             accountbalance: {
@@ -66,7 +69,8 @@ app.get('/accounts/:id', function(request, response) {
             accountholdings: {
                 holding: {
                     costbasis: holding.costbasis.toString(),
-                    qty: holding.qty.toString()
+                    qty: holding.qty.toString(),
+                    marketvalue: (holding.qty * currentQuote.close).toString()
                 }
             },
             instrument: {
