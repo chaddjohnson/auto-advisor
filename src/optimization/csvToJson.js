@@ -2,7 +2,8 @@ var request = require('request');
 var fs = require('fs');
 
 var symbol = process.argv[2];
-var url = 'http://real-chart.finance.yahoo.com/table.csv?s=' + symbol + '&a=0&b=1&c=2015&d=11&e=31&f=2016&g=d&ignore=.csv';
+var now = new Date();
+var url = 'http://real-chart.finance.yahoo.com/table.csv?s=' + symbol + '&a=0&b=1&c=2015&d=11&e=31&f=' + now.getUTCFullYear() + '&g=d&ignore=.csv';
 var quotes = [];
 
 request.get(url, function(error, response, body) {
