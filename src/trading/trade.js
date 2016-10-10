@@ -10,7 +10,9 @@ var config = require('../../config');
 var _ = require('lodash');
 var async = require('async');
 var request = require('request');
+var moment = require('moment');
 var Holidays = require('date-holidays');
+var usHolidays = require('@date/holidays-us');
 
 // State and data
 var baseInvestment = 0;
@@ -45,9 +47,19 @@ tasks.push(function(taskCallback) {
     var holidays = new Holidays('US');
     var holiday = holidays.isHoliday(new Date());
 
+    // Holidays market is closed.
+    var closedHolidays = ['Martin Luther King Day', 'Good Friday', 'Washingtons Birthday', 'Memorial Day', 'Independence Day', 'Labour Day', 'Thanksgiving Day', 'Christmas Day', 'New Years Day'];
+
+    // Good Friday is two days before Easter.
+    var goodFridayDate = new Date(holidays.easter(new Date().getUTCFullYear()).getTime() - 1000 * 60 * 60 * 24 * 2);
+    var isGoodFriday = moment().format('YYYY-MM-DD') === moment(goodFridayDate).format('YYYY-MM-DD');
+
+    // Determine if today is a holiday in which the market is closed.
+    var isHoliday = (holiday && closedHolidays.indexOf(holiday.name.replace(/[^a-zA-Z\- ]/, '')) > -1) || isGoodFriday;
+
     // Do not trade in production mode on public and bank holidays.
-    if (process.env.NODE_ENV === 'production' && holiday && (holiday.type === 'public' || holiday.type === 'bank')) {
-        return taskCallback('No buy or sell activity occurred today as it is ' + (holiday.name || 'a holiday') + '.');
+    if (process.env.NODE_ENV === 'production' && isHoliday) {
+        return taskCallback('No buy or sell activity occurred today as it is ' + ((holiday && holiday.name) || 'a holiday') + '.');
     }
 
     taskCallback();
