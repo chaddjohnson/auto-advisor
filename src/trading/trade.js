@@ -51,7 +51,7 @@ tasks.push(function(taskCallback) {
     var closedHolidays = ['Martin Luther King Day', 'Good Friday', 'Washingtons Birthday', 'Memorial Day', 'Independence Day', 'Labour Day', 'Thanksgiving Day', 'Christmas Day', 'New Years Day'];
 
     // Good Friday is two days before Easter.
-    var goodFridayDate = new Date(holidays.easter(new Date().getUTCFullYear()).getTime() - 1000 * 60 * 60 * 24 * 2);
+    var goodFridayDate = new Date(usHolidays.easter(new Date().getUTCFullYear()).getTime() - 1000 * 60 * 60 * 24 * 2);
     var isGoodFriday = moment().format('YYYY-MM-DD') === moment(goodFridayDate).format('YYYY-MM-DD');
 
     // Determine if today is a holiday in which the market is closed.
