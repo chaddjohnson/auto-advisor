@@ -1,6 +1,7 @@
 {
   "name": "auto-advisor",
   "dependencies": {
+    "@date/holidays-us": "^0.3.0",
     "async": "^2.0.0-rc.6",
     "body-parser": "^1.15.2",
     "cheerio": "^0.20.0",
@@ -8,6 +9,7 @@
     "express": "^4.14.0",
     "geneticalgorithm": "^0.3.2",
     "lodash": "^4.13.1",
+    "moment": "^2.15.1",
     "oauth": "^0.9.14",
     "q": "^1.4.1",
     "request": "^2.73.0",
