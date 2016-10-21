@@ -17,6 +17,7 @@ var symbol = process.argv[2];
 var earningsDates = [];
 var newsArticleUrl = '';
 var releasedInMorning = false;
+var nextEpsDate
 var quotes = [];
 var results = [];
 
@@ -64,6 +65,17 @@ tasks.push(function(taskCallback) {
                 newsArticleUrl = $(this).find('td').last().find('a').attr('href');
             }
         });
+
+        nextEpsDate = $('.info-table tr:first-child td').eq(0).text();
+
+        var match = nextEpsDate.match(/\d{1,2}\/\d{1,2}\/\d{2}/);
+
+        if (match && match[0]) {
+            nextEpsDate = match[0];
+        }
+        else {
+            nextEpsDate = '';
+        }
 
         taskCallback();
     });
@@ -181,6 +193,9 @@ async.series(tasks, function(error) {
     if (error) {
         return;
     }
+    if (results.length < 7) {
+        return;
+    }
 
     var morningChangeAverage = _.reduce(results, function(memo, item) {
         return memo + item.morningChange;
@@ -215,7 +230,7 @@ async.series(tasks, function(error) {
     var dayWinRate = (dayWins / results.length) * 100;
 
     // Display results.
-    // console.log('\nSYMBOL\tMORNING %\tHIGH %\t\tCLOSE %\t\tMORNING #\tHIGH #\t\tCLOSE #\t\tRESULTS');
-    // console.log('======\t=========\t======\t\t=======\t\t=========\t======\t\t=======\t\t=======');
-    console.log(symbol + '\t' + morningChangeAverage.toFixed(2) + '\t\t' + highChangeAverage.toFixed(2) + '\t\t' + dayChangeAverage.toFixed(2) + '\t\t' + morningWinRate.toFixed(2) + '\t\t' + highWinRate.toFixed(2) + '\t\t' + dayWinRate.toFixed(2) + '\t\t' + results.length);
+    // console.log('\nSYMBOL\tMORNING %\tHIGH %\t\tCLOSE %\t\tMORNING #\tHIGH #\t\tCLOSE #\t\tRESULTS\t\tNEXT EPS');
+    // console.log('======\t=========\t======\t\t=======\t\t=========\t======\t\t=======\t\t=======\t\t========');
+    console.log(symbol + '\t' + morningChangeAverage.toFixed(2) + '\t\t' + highChangeAverage.toFixed(2) + '\t\t' + dayChangeAverage.toFixed(2) + '\t\t' + morningWinRate.toFixed(2) + '\t\t' + highWinRate.toFixed(2) + '\t\t' + dayWinRate.toFixed(2) + '\t\t' + results.length + '\t\t' + nextEpsDate);
 });
