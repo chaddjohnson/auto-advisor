@@ -98,7 +98,7 @@ tasks.push(function(taskCallback) {
 // Download quotes.
 tasks.push(function(taskCallback) {
     var options = {
-        url: 'http://real-chart.finance.yahoo.com/table.csv?s=' + symbol + '&a=0&b=01&c=2013&d=07&e=21&f=2016&g=d&ignore=.csv',
+        url: 'http://real-chart.finance.yahoo.com/table.csv?s=' + symbol + '&a=0&b=01&c=2014&d=07&e=21&f=2016&g=d&ignore=.csv',
         headers: {
             'User-Agent': 'Mozilla/5.0 (Macintosh; Intel Mac OS X 10_11_5) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/51.0.2704.103 Safari/537.36'
         }
