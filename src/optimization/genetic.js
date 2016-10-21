@@ -43,7 +43,8 @@ _.times(generateRandomNumber(1, 10), function(index) {
         stopLossThreshold: generateRandomNumber(0.05, 10.0, 5),
         recentLargeChangeCounterStart: generateRandomNumber(1, 10),
         minPercentChangeBuy: generateRandomNumber(-10, 0, 5),
-        maxPercentChangeBuy: generateRandomNumber(0, 10, 5)
+        maxPercentChangeBuy: generateRandomNumber(0, 10, 5),
+        maxDaysHeld: generateRandomNumber(1, 60)
     });
 });
 
@@ -81,7 +82,7 @@ function mutationFunction(oldPhenotype) {
 
     // Select a random property to mutate.
     var propertyMin = 0;
-    var propertyMax = 5;
+    var propertyMax = 6;
     var propertyIndex = Math.floor(Math.random() * ((propertyMax - propertyMin) + 1)) + propertyMin;
 
     // Use oldPhenotype and some random function to make a change to the phenotype.
@@ -109,6 +110,9 @@ function mutationFunction(oldPhenotype) {
         case 5:
             resultPhenotype.maxPercentChangeBuy = generateRandomNumber(0, 10, 5);
             break;
+
+        case 6:
+            resultPhenotype.maxDaysHeld = generateRandomNumber(1, 60);
     }
 
     return resultPhenotype;
@@ -148,6 +152,11 @@ function crossoverFunction(phenotypeA, phenotypeB) {
     if (generateRandomNumber(0, 1)) {
         result1.maxPercentChangeBuy = phenotypeB.maxPercentChangeBuy;
         result2.maxPercentChangeBuy = phenotypeA.maxPercentChangeBuy;
+    }
+
+    if (generateRandomNumber(0, 1)) {
+        result1.maxDaysHeld = phenotypeB.maxDaysHeld;
+        result2.maxDaysHeld = phenotypeA.maxDaysHeld;
     }
 
     return [result1, result2];
@@ -212,8 +221,10 @@ function backtest(phenotype) {
         var targetSellPrice = averagePositionCostBasis * (1 + (phenotype.sellTriggerProfitPercentage / 100));
         var targetSellPriceReached = dataPoint.close >= targetSellPrice;
         var stopLossThresholdReached = dataPoint.close <= averagePositionCostBasis * (1 - (phenotype.stopLossThreshold / 100));
+        var daysHeld = Math.round((new Date(dataPoint.date) - new Date(firstBuyDate)) / 24 / 60 / 60 / 1000);
+        var heldLongEnough = dataPoint.close >= averagePositionCostBasis && daysHeld >= phenotype.maxDaysHeld;
 
-        if (positions.length && (stopLossThresholdReached || targetSellPriceReached)) {
+        if (positions.length && (stopLossThresholdReached || targetSellPriceReached || heldLongEnough)) {
             let grossProfit = (shareSum * dataPoint.close) - commission;
             let netProfit = grossProfit - costBasisSum;
 
