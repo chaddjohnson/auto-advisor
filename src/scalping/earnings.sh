@@ -6,7 +6,7 @@ echo "SYMBOL  MORNING %       HIGH %          CLOSE %         MORNING #       HI
 echo "======  =========       ======          =======         =========       ======          =======         =======         ========"
 
 for symbol in ${symbols[*]}; do
-    node analyze $symbol
+    node earnings $symbol
     sleep 1
 done
 
