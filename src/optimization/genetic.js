@@ -39,7 +39,7 @@ var population = [];
 _.times(generateRandomNumber(1, 10), function(index) {
     population.push({
         investmentDivisor: generateRandomNumber(3.0, 20.0, 5),
-        sellTriggerProfitPercentage: generateRandomNumber(0.05, 3.0, 5),
+        sellTriggerProfitPercentage: generateRandomNumber(0.05, 2.0, 5),
         stopLossThreshold: generateRandomNumber(0.05, 10.0, 5),
         recentLargeChangeCounterStart: generateRandomNumber(1, 10),
         minPercentChangeBuy: generateRandomNumber(-10, 0, 5),
@@ -92,7 +92,7 @@ function mutationFunction(oldPhenotype) {
             break;
 
         case 1:
-            resultPhenotype.sellTriggerProfitPercentage = generateRandomNumber(0.05, 3.0, 5);
+            resultPhenotype.sellTriggerProfitPercentage = generateRandomNumber(0.05, 2.0, 5);
             break;
 
         case 2:
