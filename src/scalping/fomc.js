@@ -156,8 +156,8 @@ tasks.push(function(taskCallback) {
 tasks.push(function(taskCallback) {
     var error = null;
 
-    // console.log('DATE\t\tMORNING %\tHIGH %\tCLOSE %');
-    // console.log('==========\t=========\t======\t=======');
+    console.log('DATE\t\tMORNING %\tHIGH %\tCLOSE %');
+    console.log('==========\t=========\t======\t=======');
 
     earningsDates.forEach(function(earningsDate, earningsIndex) {
         var quoteIndex = 0;
@@ -180,7 +180,7 @@ tasks.push(function(taskCallback) {
             };
             results.push(result);
 
-            // console.log(earningsDate + '\t' + result.morningChange.toFixed(2) + '\t\t' + result.highChange.toFixed(2) + '\t' + result.dayChange.toFixed(2));
+            console.log(earningsDate + '\t' + result.morningChange.toFixed(2) + '\t\t' + result.highChange.toFixed(2) + '\t' + result.dayChange.toFixed(2));
         }
         catch (error) {
             error = 'Error using quote.';
@@ -233,7 +233,7 @@ async.series(tasks, function(error) {
     var dayWinRate = (dayWins / results.length) * 100;
 
     // Display results.
-    // console.log('\nSYMBOL\tMORNING %\tHIGH %\t\tCLOSE %\t\tMORNING #\tHIGH #\t\tCLOSE #\t\tRESULTS\t\tNEXT EPS');
-    // console.log('======\t=========\t======\t\t=======\t\t=========\t======\t\t=======\t\t=======\t\t========');
+    console.log('\nSYMBOL\tMORNING %\tHIGH %\t\tCLOSE %\t\tMORNING #\tHIGH #\t\tCLOSE #\t\tRESULTS\t\tNEXT EPS');
+    console.log('======\t=========\t======\t\t=======\t\t=========\t======\t\t=======\t\t=======\t\t========');
     console.log(symbol + '\t' + morningChangeAverage.toFixed(2) + '\t\t' + highChangeAverage.toFixed(2) + '\t\t' + dayChangeAverage.toFixed(2) + '\t\t' + morningWinRate.toFixed(2) + '\t\t' + highWinRate.toFixed(2) + '\t\t' + dayWinRate.toFixed(2) + '\t\t' + results.length + '\t\t' + nextEpsDate);
 });
