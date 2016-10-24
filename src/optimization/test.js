@@ -15,7 +15,7 @@ var positions = [];
 var data = require('../../data/' + symbol + '.json');
 
 // Settings
-var phenotype = {"investmentDivisor":3.0068,"sellTriggerProfitPercentage":1.46044,"stopLossThreshold":5.79213,"recentLargeChangeCounterStart":3,"minPercentChangeBuy":-3.89874,"maxPercentChangeBuy":6.5179,"maxDaysHeld":14};
+var phenotype = {"investmentDivisor": 3.14365,"sellTriggerProfitPercentage": 2.66697,"stopLossThreshold": 5.58246,"recentLargeChangeCounterStart": 3,"minPercentChangeBuy": -3.85875,"maxPercentChangeBuy": 6.5528};
 var balance = 100000;
 var startingBalance = balance;
 var commission = 4.95;
@@ -57,9 +57,7 @@ data.forEach(function(dataPoint) {
         daysHeld = 0;
     }
 
-    var heldLongEnough = dataPoint.close >= averagePositionCostBasis && daysHeld >= phenotype.maxDaysHeld;
-
-    if (positions.length && (stopLossThresholdReached || targetSellPriceReached || heldLongEnough)) {
+    if (positions.length && (stopLossThresholdReached || targetSellPriceReached)) {
         let grossProfit = (shareSum * dataPoint.close) - commission;
         let netProfit = grossProfit - costBasisSum;
 
