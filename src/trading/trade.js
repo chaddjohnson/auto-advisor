@@ -279,7 +279,7 @@ tasks.push(function(taskCallback) {
 async.series(tasks, function(error) {
     if (error) {
         // Send an SMS.
-        return smsClient.send(config.sms.toNumber, 'Error: ' + (error.message || error));
+        return smsClient.send(config.sms.toNumber, error.message || error);
     }
 
     if (!activityOccurred) {
