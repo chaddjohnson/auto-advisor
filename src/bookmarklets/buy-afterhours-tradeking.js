@@ -77,7 +77,7 @@
 
                 priceDisplayInterval = window.setInterval(function() {
                     // Update the "Change" display.
-                    jQuery('#quotePanelPctChange0 span').text('[' + change.toFixed(2) + '%]')
+                    jQuery('#quotePanelPctChange0 span').text('[' + change.toFixed(2) + '%]');
 
                     // Update the "Change" display color.
                     if (change > 0) {
