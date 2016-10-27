@@ -37,6 +37,10 @@ data.forEach(function(dataPoint) {
         return;
     }
 
+    // if (new Date(dataPoint.date).getDate() === 20 || (new Date(previousDate).getDate() < 20 && new Date(dataPoint.date).getDate() > 20)) {
+    //     balance += 9500;
+    // }
+
     var costBasisSum = 0;
     var shareSum = 0;
 
