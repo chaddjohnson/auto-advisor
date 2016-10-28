@@ -17,9 +17,9 @@ var symbol = process.argv[2];
 var earningsDates = [];
 var newsArticleUrl = '';
 var releasedInMorning = false;
+var nextEpsDate
 var quotes = [];
 var results = [];
-var recentEarningsGood = false;
 
 // Synchronous tasks.
 var tasks = [];
@@ -43,7 +43,7 @@ tasks.push(function(taskCallback) {
         // Go through each earning history.
         $('.earning_history .is_hilite, .earning_history .LiteHover').each(function(index) {
             // Only worry about the last several earnings reports.
-            if (earningsDates.length >= 10) {
+            if (earningsDates.length >= 16) {
                 return;
             }
 
@@ -65,6 +65,20 @@ tasks.push(function(taskCallback) {
                 newsArticleUrl = $(this).find('td').last().find('a').attr('href');
             }
         });
+
+        // Override earnings dates with FOMC meeting dates.
+        // earningsDates = ['2016-09-21','2016-07-27','2016-06-15','2016-04-27','2016-03-16','2016-01-27','2015-12-16','2015-10-28','2015-09-17','2015-07-29','2015-06-17','2015-04-29','2015-03-18','2015-01-28'];
+
+        nextEpsDate = $('.info-table tr:first-child td').eq(0).text();
+
+        var match = nextEpsDate.match(/\d{1,2}\/\d{1,2}\/\d{2}/);
+
+        if (match && match[0]) {
+            nextEpsDate = match[0];
+        }
+        else {
+            nextEpsDate = '';
+        }
 
         taskCallback();
     });
@@ -88,6 +102,10 @@ tasks.push(function(taskCallback) {
 
         releasedInMorning = timestamp.indexOf('AM') > -1;
 
+        if (releasedInMorning) {
+            return taskCallback('Skipping ' + symbol + ' as earnings are released in morning.');
+        }
+
         taskCallback();
     });
 });
@@ -95,7 +113,7 @@ tasks.push(function(taskCallback) {
 // Download quotes.
 tasks.push(function(taskCallback) {
     var options = {
-        url: 'http://real-chart.finance.yahoo.com/table.csv?s=' + symbol + '&a=0&b=01&c=2013&d=11&e=31&f=2016&g=d&ignore=.csv',
+        url: 'http://real-chart.finance.yahoo.com/table.csv?s=' + symbol + '&a=0&b=01&c=2012&d=11&e=31&f=2016&g=d&ignore=.csv',
         headers: {
             'User-Agent': 'Mozilla/5.0 (Macintosh; Intel Mac OS X 10_11_5) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/51.0.2704.103 Safari/537.36'
         }
@@ -138,6 +156,9 @@ tasks.push(function(taskCallback) {
 tasks.push(function(taskCallback) {
     var error = null;
 
+    // console.log('DATE\t\tMORNING %\tHIGH %\tCLOSE %');
+    // console.log('==========\t=========\t======\t=======');
+
     earningsDates.forEach(function(earningsDate, earningsIndex) {
         var quoteIndex = 0;
         var quote = _.find(quotes, function(item, index) {
@@ -148,30 +169,22 @@ tasks.push(function(taskCallback) {
         });
         var previousQuote = null;
 
-        if (releasedInMorning) {
-            previousQuote = quotes[quoteIndex + 1];
-        }
-        else {
-            previousQuote = quote;
-            quote = quotes[quoteIndex - 1];
-        }
+        previousQuote = quotes[quoteIndex + 1];
 
         // Calculate results.
         try {
-            results.push({
+            var result = {
                 morningChange: ((quote.open / previousQuote.close) - 1) * 100,
+                highChange: ((quote.high / previousQuote.close) - 1) * 100,
                 dayChange: ((quote.close / previousQuote.close) - 1) * 100
-            });
+            };
+            results.push(result);
 
-            // console.log(earningsDate, (((quote.open / previousQuote.close) - 1) * 100).toFixed(2), (((quote.close / previousQuote.close) - 1) * 100).toFixed(2));
+            // console.log(earningsDate + '\t' + result.morningChange.toFixed(2) + '\t\t' + result.highChange.toFixed(2) + '\t' + result.dayChange.toFixed(2));
         }
         catch (error) {
             error = 'Error using quote.';
             return;
-        }
-
-        if (earningsIndex === 0 && (results[0].morningChange >= 0.1 || results[0].dayChange >= 0.1)) {
-            recentEarningsGood = true;
         }
     });
 
@@ -181,7 +194,9 @@ tasks.push(function(taskCallback) {
 // Execute tasks.
 async.series(tasks, function(error) {
     if (error) {
-        //return console.error(symbol + ': ' + error);
+        return;
+    }
+    if (results.length < 7) {
         return;
     }
 
@@ -189,25 +204,36 @@ async.series(tasks, function(error) {
         return memo + item.morningChange;
     }, 0) / results.length;
 
+    var highChangeAverage = _.reduce(results, function(memo, item) {
+        return memo + item.highChange;
+    }, 0) / results.length;
+
     var dayChangeAverage = _.reduce(results, function(memo, item) {
         return memo + item.dayChange;
     }, 0) / results.length;
 
     var morningWins = 0;
+    var highWins = 0;
     var dayWins = 0;
 
     results.forEach(function(result) {
-        if (result.morningChange >= 0.1) {
+        if (result.morningChange >= 0) {
             morningWins++;
         }
-        if (result.dayChange >= 0.1) {
+        if (result.highChange >= 0) {
+            highWins++;
+        }
+        if (result.dayChange >= 0) {
             dayWins++;
         }
     });
 
     var morningWinRate = (morningWins / results.length) * 100;
+    var highWinRate = (highWins / results.length) * 100;
     var dayWinRate = (dayWins / results.length) * 100;
 
     // Display results.
-    console.log(symbol + '\t' + morningChangeAverage.toFixed(2) + '\t\t' + dayChangeAverage.toFixed(2) + '\t\t' + morningWinRate.toFixed(2) + '\t\t' + dayWinRate.toFixed(2) + '\t\t' + recentEarningsGood + '\t\t' + results.length);
+    // console.log('\nSYMBOL\tMORNING %\tHIGH %\t\tCLOSE %\t\tMORNING #\tHIGH #\t\tCLOSE #\t\tRESULTS\t\tNEXT EPS');
+    // console.log('======\t=========\t======\t\t=======\t\t=========\t======\t\t=======\t\t=======\t\t========');
+    console.log(symbol + '\t' + morningChangeAverage.toFixed(2) + '\t\t' + highChangeAverage.toFixed(2) + '\t\t' + dayChangeAverage.toFixed(2) + '\t\t' + morningWinRate.toFixed(2) + '\t\t' + highWinRate.toFixed(2) + '\t\t' + dayWinRate.toFixed(2) + '\t\t' + results.length + '\t\t' + nextEpsDate);
 });

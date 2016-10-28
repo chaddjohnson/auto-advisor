@@ -148,17 +148,23 @@ tasks.push(function(taskCallback) {
 // Determine the number of recent large price changes.
 tasks.push(function(taskCallback) {
     var previousHistoricalQuote = null;
+    var dayPercentChange = ((quote.price / quote.previousClosePrice) - 1) * 100;
 
     historicalQuotes.forEach(function(historicalQuote) {
-        var percentChange = previousHistoricalQuote ? ((historicalQuote.close / previousHistoricalQuote.close) - 1) * 100 : 0;
+        var historicalPercentChange = previousHistoricalQuote ? ((historicalQuote.close / previousHistoricalQuote.close) - 1) * 100 : 0;
 
-        if (percentChange <= config.minPercentChangeBuy || percentChange >= config.maxPercentChangeBuy) {
+        if (historicalPercentChange <= config.minPercentChangeBuy || historicalPercentChange >= config.maxPercentChangeBuy) {
             recentLargeChangeCounter = config.recentLargeChangeCounterStart + 1;
         }
 
         recentLargeChangeCounter--;
         previousHistoricalQuote = historicalQuote;
     });
+
+    // If there was a major change today, then set the counter.
+    if (dayPercentChange <= config.minPercentChangeBuy || dayPercentChange >= config.maxPercentChangeBuy) {
+        recentLargeChangeCounter = config.recentLargeChangeCounterStart;
+    }
 
     taskCallback();
 });
