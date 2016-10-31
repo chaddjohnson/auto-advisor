@@ -225,7 +225,7 @@ tasks.push(function(taskCallback) {
     var changeAction = percentChange >= 0 ? 'increased' : 'decreased';
 
     // Possibly buy if it's not a bad time to buy.
-    if (percentChange !== 0 && recentLargeChangeCounter <= 0 && percentChange > config.minPercentChangeBuy && percentChange < config.maxPercentChangeBuy) {
+    if (recentLargeChangeCounter <= 0 && percentChange > config.minPercentChangeBuy && percentChange < config.maxPercentChangeBuy) {
         let investment = Math.sqrt(Math.abs(percentChange)) * baseInvestment;
         let qty = Math.floor(investment / quote.price);
         let costBasis = (qty * quote.price) + config.brokerage.commission;

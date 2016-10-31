@@ -79,7 +79,7 @@ data.forEach(function(dataPoint) {
         shareSum = 0;
     }
 
-    if (percentChange !== 0 && percentChange > phenotype.minPercentChangeBuy && percentChange < phenotype.maxPercentChangeBuy) {
+    if (percentChange > phenotype.minPercentChangeBuy && percentChange < phenotype.maxPercentChangeBuy) {
         if (recentLargeChangeCounter <= 0) {
             let position = {};
             let investment = Math.sqrt(Math.abs(percentChange)) * baseInvestment;
