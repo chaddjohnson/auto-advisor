@@ -183,10 +183,13 @@ tasks.push(function(taskCallback) {
     // Determine whether the stop loss threshold has been reached.
     var stopLossThresholdReached = quote.price <= averageHoldingCostBasis * (1 - (config.stopLossThreshold / 100));
 
+    // Determine if today is an earnings release date.
+    var isEarningsDate = config.earningsDates.indexOf(quote.datetime.match(/^\d{4}\-\d{2}\-\d{2}/)[0]) > -1;
+
     // Track cash prior to sell so that net profit can be calculated.
     var previousCash = cash;
 
-    if (holdingQty > 0 && (stopLossThresholdReached || targetSellPriceReached)) {
+    if (holdingQty > 0 && (stopLossThresholdReached || targetSellPriceReached || isEarningsDate)) {
         tradingClient.sell(config.symbol, holdingQty).then(function() {
             // Add a multi-second delay to let things settle.
             setTimeout(function() {
@@ -224,8 +227,11 @@ tasks.push(function(taskCallback) {
     var percentChange = ((quote.price / quote.previousClosePrice) - 1) * 100;
     var changeAction = percentChange >= 0 ? 'increased' : 'decreased';
 
+    // Determine if today is an earnings release date.
+    var isEarningsDate = config.earningsDates.indexOf(quote.datetime.match(/^\d{4}\-\d{2}\-\d{2}/)[0]) > -1;
+
     // Possibly buy if it's not a bad time to buy.
-    if (recentLargeChangeCounter <= 0 && percentChange > config.minPercentChangeBuy && percentChange < config.maxPercentChangeBuy) {
+    if (recentLargeChangeCounter <= 0 && percentChange > config.minPercentChangeBuy && percentChange < config.maxPercentChangeBuy && !isEarningsDate) {
         let investment = Math.sqrt(Math.abs(percentChange)) * baseInvestment;
         let qty = Math.floor(investment / quote.price);
         let costBasis = (qty * quote.price) + config.brokerage.commission;
