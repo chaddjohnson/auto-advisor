@@ -178,6 +178,7 @@ function fitnessFunction(phenotype) {
 // }
 
 function backtest(phenotype) {
+    var earningsDates = ['2016-10-27','2016-07-28','2016-04-28','2016-01-28','2015-10-22','2015-07-23','2015-04-23','2015-01-29','2014-10-23','2014-07-24'];
     var balance = 100000;
     var startingBalance = balance;
     var loss = 0;
@@ -212,8 +213,9 @@ function backtest(phenotype) {
         var targetSellPrice = averagePositionCostBasis * (1 + (phenotype.sellTriggerProfitPercentage / 100));
         var targetSellPriceReached = dataPoint.close >= targetSellPrice;
         var stopLossThresholdReached = dataPoint.close <= averagePositionCostBasis * (1 - (phenotype.stopLossThreshold / 100));
+        var isEarningsDate = earningsDates.indexOf(dataPoint.date) > -1;
 
-        if (positions.length && (stopLossThresholdReached || targetSellPriceReached)) {
+        if (positions.length && (stopLossThresholdReached || targetSellPriceReached || isEarningsDate)) {
             let grossProfit = (shareSum * dataPoint.close) - commission;
             let netProfit = grossProfit - costBasisSum;
 
@@ -230,7 +232,7 @@ function backtest(phenotype) {
             }
         }
 
-        if (percentChange > phenotype.minPercentChangeBuy && percentChange < phenotype.maxPercentChangeBuy) {
+        if (percentChange > phenotype.minPercentChangeBuy && percentChange < phenotype.maxPercentChangeBuy && !isEarningsDate) {
             if (recentLargeChangeCounter <= 0) {
                 let position = {};
                 let investment = Math.sqrt(Math.abs(percentChange)) * baseInvestment;
@@ -252,7 +254,9 @@ function backtest(phenotype) {
             }
         }
         else {
-            recentLargeChangeCounter = phenotype.recentLargeChangeCounterStart;
+            if (!isEarningsDate) {
+                recentLargeChangeCounter = phenotype.recentLargeChangeCounterStart;
+            }
         }
 
         // Calculate current account value.
