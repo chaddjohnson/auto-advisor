@@ -14,9 +14,14 @@ var positions = [];
 // Data
 var data = require('../../data/' + symbol + '.json');
 
-// Settings
-var phenotype = {"investmentDivisor":3.35964,"sellTriggerProfitPercentage":1.64684,"stopLossThreshold":9.02052,"recentLargeChangeCounterStart":9,"minPercentChangeBuy":-7.09616,"maxPercentChangeBuy":9.75202};
-var earningsDates = ['2016-10-27','2016-07-28','2016-04-28','2016-01-28','2015-10-22','2015-07-23','2015-04-23','2015-01-29','2014-10-23','2014-07-24'];
+// AMZN
+// var phenotype = {"investmentDivisor":3.35964,"sellTriggerProfitPercentage":1.64684,"stopLossThreshold":9.02052,"recentLargeChangeCounterStart":9,"minPercentChangeBuy":-7.09616,"maxPercentChangeBuy":9.75202};
+// var pullOutDates = ['2016-10-27','2016-07-28','2016-04-28','2016-01-28','2015-10-22','2015-07-23','2015-04-23','2015-01-29','2014-10-23','2014-07-24'];
+
+// NVDA
+var phenotype = {"investmentDivisor":3.02786,"sellTriggerProfitPercentage":1.93251,"stopLossThreshold":5.78535,"recentLargeChangeCounterStart":1,"minPercentChangeBuy":-3.0607,"maxPercentChangeBuy":4.17419};
+var pullOutDates = ['11/10/2016','08/11/2016','05/12/2016','02/17/2016','11/05/2015','08/06/2015'];
+
 var balance = 100000;
 var startingBalance = balance;
 var commission = 4.95;
@@ -55,7 +60,7 @@ data.forEach(function(dataPoint) {
     var targetSellPrice = averagePositionCostBasis * (1 + (phenotype.sellTriggerProfitPercentage / 100));
     var targetSellPriceReached = dataPoint.close >= targetSellPrice;
     var stopLossThresholdReached = dataPoint.close <= averagePositionCostBasis * (1 - (phenotype.stopLossThreshold / 100));
-    var isEarningsDate = earningsDates.indexOf(dataPoint.date) > -1;
+    var isPullOutDate = pullOutDates.indexOf(dataPoint.date) > -1;
 
     daysHeld = Math.round((new Date(dataPoint.date) - new Date(firstBuyDate)) / 24 / 60 / 60 / 1000);
 
@@ -63,7 +68,7 @@ data.forEach(function(dataPoint) {
         daysHeld = 0;
     }
 
-    if (positions.length && (stopLossThresholdReached || targetSellPriceReached || isEarningsDate)) {
+    if (positions.length && (stopLossThresholdReached || targetSellPriceReached || isPullOutDate)) {
         let grossProfit = (shareSum * dataPoint.close) - commission;
         let netProfit = grossProfit - costBasisSum;
 
@@ -81,7 +86,7 @@ data.forEach(function(dataPoint) {
         shareSum = 0;
     }
 
-    if (percentChange > phenotype.minPercentChangeBuy && percentChange < phenotype.maxPercentChangeBuy && !isEarningsDate) {
+    if (percentChange > phenotype.minPercentChangeBuy && percentChange < phenotype.maxPercentChangeBuy && !isPullOutDate) {
         if (recentLargeChangeCounter <= 0) {
             let position = {};
             let investment = Math.sqrt(Math.abs(percentChange)) * baseInvestment;
@@ -106,7 +111,7 @@ data.forEach(function(dataPoint) {
         }
     }
     else {
-        if (!isEarningsDate) {
+        if (!isPullOutDate) {
             recentLargeChangeCounter = phenotype.recentLargeChangeCounterStart;
         }
     }
