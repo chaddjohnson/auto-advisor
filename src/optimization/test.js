@@ -14,9 +14,14 @@ var positions = [];
 // Data
 var data = require('../../data/' + symbol + '.json');
 
-// Settings
-var phenotype = {"investmentDivisor":3.35964,"sellTriggerProfitPercentage":1.64684,"stopLossThreshold":9.02052,"recentLargeChangeCounterStart":9,"minPercentChangeBuy":-7.09616,"maxPercentChangeBuy":9.75202};
-var earningsDates = ['2016-10-27','2016-07-28','2016-04-28','2016-01-28','2015-10-22','2015-07-23','2015-04-23','2015-01-29','2014-10-23','2014-07-24'];
+// AMZN
+// var phenotype = {"investmentDivisor":3.35964,"sellTriggerProfitPercentage":1.64684,"stopLossThreshold":9.02052,"recentLargeChangeCounterStart":9,"minPercentChangeBuy":-7.09616,"maxPercentChangeBuy":9.75202};
+// var earningsDates = ['2016-10-27','2016-07-28','2016-04-28','2016-01-28','2015-10-22','2015-07-23','2015-04-23','2015-01-29','2014-10-23','2014-07-24'];
+
+// NVDA
+var phenotype = {"investmentDivisor":3.02786,"sellTriggerProfitPercentage":1.93251,"stopLossThreshold":5.78535,"recentLargeChangeCounterStart":1,"minPercentChangeBuy":-3.0607,"maxPercentChangeBuy":4.17419};
+var earningsDates = ['11/10/2016','08/11/2016','05/12/2016','02/17/2016','11/05/2015','08/06/2015'];
+
 var balance = 100000;
 var startingBalance = balance;
 var commission = 4.95;
