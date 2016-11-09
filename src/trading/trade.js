@@ -159,11 +159,6 @@ tasks.push(function(taskCallback) {
         previousHistoricalQuote = historicalQuote;
     });
 
-    // If there was a major change today, then set the counter.
-    if (dayPercentChange <= config.minPercentChangeBuy || dayPercentChange >= config.maxPercentChangeBuy) {
-        recentLargeChangeCounter = config.recentLargeChangeCounterStart;
-    }
-
     taskCallback();
 });
 
