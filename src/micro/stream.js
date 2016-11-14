@@ -10,7 +10,7 @@ var colors = require('colors');
 var Quote = require('./quote');
 
 // Settings
-var symbols = ['AMZN','AAPL','FB'];
+var symbols = ['AMZN','AAPL','FB','MSFT'];
 
 var client = new OAuth(null, null, config.brokerage.consumerKey, config.brokerage.consumerSecret, '1.0', null, 'HMAC-SHA1');
 var request = client.get('https://stream.tradeking.com/v1/market/quotes.json?symbols=' + symbols.join(','), config.brokerage.accessToken, config.brokerage.accessSecret);
