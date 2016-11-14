@@ -22,8 +22,8 @@ function stream() {
     request.on('response', function (response) {
         var chunk = '';
         var errorCount = 0;
-        var lastQuote = null;
-        var lastTrade = null;
+        var lastQuotes = {};
+        var lastTrades = {};
 
         response.setEncoding('utf8');
 
@@ -55,15 +55,15 @@ function stream() {
                 return;
             }
 
-            if (lastTrade && quote) {
+            if (quote && lastTrades[quote.symbol]) {
                 newQuote = new Quote({
                     symbol: quote.symbol,
                     bidPrice: parseFloat(quote.bid),
                     askPrice: parseFloat(quote.ask),
-                    lastPrice: parseFloat(lastTrade.last),
+                    lastPrice: parseFloat(lastTrades[quote.symbol].last),
                     timestamp: quote.timestamp,
-                    tradeVolume: parseInt(lastTrade.vl),
-                    cumulativeVolume: parseInt(lastTrade.cvol)
+                    tradeVolume: parseInt(lastTrades[quote.symbol].vl),
+                    cumulativeVolume: parseInt(lastTrades[quote.symbol].cvol)
                 });
 
                 newQuote.save(function(error) {
@@ -76,14 +76,19 @@ function stream() {
             }
 
             if (quote) {
-                lastQuote = JSON.parse(JSON.stringify(quote));
+                lastQuotes[quote.symbol] = JSON.parse(JSON.stringify(quote));
             }
             if (trade) {
-                lastTrade = JSON.parse(JSON.stringify(trade));
+                lastTrades[trade.symbol] = JSON.parse(JSON.stringify(trade));
             }
         });
     });
+    request.on('error', function(error) {
+        console.error(error);
+    });
     request.on('close', function() {
+        console.error('Connection closed');
+
         // Restart streaming.
         setTimeout(stream, 1000);
     });
