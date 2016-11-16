@@ -7,7 +7,7 @@ var config = require('../../config');
 var mongoose = require('mongoose');
 var OAuth = require('oauth').OAuth;
 var colors = require('colors');
-var Quote = require('./quote');
+var Quote = require('./quoteModel');
 
 // Settings
 var symbols = ['AMZN','AAPL','FB','MSFT'];
