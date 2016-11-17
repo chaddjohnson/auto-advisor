@@ -191,7 +191,7 @@ tasks.push(function(taskCallback) {
         var dollarChange = 0;
         var percentChange = 0;
 
-        console.log('symbol\tshares\tbid\t\task\t\tlast\t\ttarget\tgain/loss');
+        console.log('symbol\tshares\tbid\t\task\t\tlast\t\ttarget\tchange');
 
         response.setEncoding('utf8');
         response.on('data', function(data) {
