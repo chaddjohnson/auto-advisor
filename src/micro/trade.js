@@ -23,6 +23,7 @@ var initialQuote = null;
 var shareCount = 0;
 var averagePrice = 0;
 var targetSellPrice = 0;
+var limitOrderId = '';
 
 // Tasks to execute.
 var tasks = [];
@@ -90,8 +91,13 @@ tasks.push(function(taskCallback) {
 tasks.push(function(taskCallback) {
     console.log('Verifying bid/ask spread...');
 
-    // Verify the bid/ask spread is not too great.
-    // TODO
+    // var bidAskSpreadMaximum = 0.00005;
+    // var spread = ((initialQuote.ask / initialQuote.bid) - 1);
+
+    // // Verify the bid/ask spread is not too great.
+    // if (spread > bidAskSpreadMaximum) {
+    //     return taskCallback('Bid/ask spread exceeds ' + bidAskSpreadMaximum + '.');
+    // }
 
     taskCallback();
 });
@@ -137,7 +143,7 @@ tasks.push(function(taskCallback) {
             if (holding && holding.quantity === shareCount) {
                 averagePrice = holding.averagePrice;
 
-                console.log(holding.quantity + ' shares held at average price of ' + averagePrice);
+                console.log(holding.quantity + ' shares held at average price of ' + averagePrice + '.');
 
                 taskCallback();
             }
@@ -159,7 +165,10 @@ tasks.push(function(taskCallback) {
     console.log('Placing sell limit order for ' + targetSellPrice + '...');
 
     // Create a sell limit order.
-    tradingClient.sell(symbol, shareCount, targetSellPrice).then(function() {
+    tradingClient.sell(symbol, shareCount, targetSellPrice).then(function(data) {
+        // Track the order ID.
+        limitOrderId = data.orderId;
+
         taskCallback();
     }).catch(function(error) {
         taskCallback(error);
@@ -249,8 +258,7 @@ tasks.push(function(taskCallback) {
     });
 
     streamingRequest.on('error', function(error) {
-        process.stdout.write('\n');
-        console.error(colors.red(error.message || error));
+        console.error('\n' + colors.red(error.message || error));
     });
     streamingRequest.on('close', function() {
         if (targetReached) {
@@ -313,8 +321,7 @@ tasks.push(function(taskCallback) {
 
 async.series(tasks, function(error) {
     if (error) {
-        process.stdout.write('\n');
-        console.error(colors.red(error.message || error));
+        console.error('\n' + colors.red(error.message || error));
     }
 
     // Ensure the script actually terminates.
@@ -322,9 +329,26 @@ async.series(tasks, function(error) {
 });
 
 process.on('SIGINT', function() {
-    console.log('Aborting trade...');
+    console.log('\nAborting trade...');
 
-    // TODO
+    // Cancel the limit order.
+    tradingClient.cancelOrder(limitOrderId, symbol).then(function() {
+        console.log('Sell limit order canceled.');
 
-    process.exit();
+        // Wait for the cancelation to complete.
+        setTimeout(function() {
+            console.log('Placing sell market order...');
+
+            // Create a market sell order.
+            tradingClient.sell(symbol, shareCount).then(function() {
+                console.log('Sell market order placed successfully.');
+            }).catch(function(error) {
+                console.error(colors.red('Unable to place sell market order: ' + (error.message || error)));
+            }).finally(function() {
+                process.exit();
+            });
+        }, 1000);
+    }).catch(function(error) {
+        console.error(colors.red('Unable to cancel sell limit order: ' + (error.message || error)));
+    });
 });
