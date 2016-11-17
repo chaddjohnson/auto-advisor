@@ -91,12 +91,12 @@ tasks.push(function(taskCallback) {
 tasks.push(function(taskCallback) {
     console.log('Verifying bid/ask spread...');
 
-    // var bidAskSpreadMaximum = 0.00005;
-    // var spread = ((initialQuote.ask / initialQuote.bid) - 1);
+    // var bidAskSpreadMaximum = 0.0002;
+    // var bidAskSpread = (initialQuote.ask / initialQuote.bid) - 1;
 
     // // Verify the bid/ask spread is not too great.
-    // if (spread > bidAskSpreadMaximum) {
-    //     return taskCallback('Bid/ask spread exceeds ' + bidAskSpreadMaximum + '.');
+    // if (bidAskSpread > bidAskSpreadMaximum) {
+    //     return taskCallback('Bid/ask spread of ' + bidAskSpread + ' exceeds maximum of ' + bidAskSpreadMaximum + '.');
     // }
 
     taskCallback();
@@ -329,6 +329,11 @@ async.series(tasks, function(error) {
 });
 
 process.on('SIGINT', function() {
+    if (!limitOrderId) {
+        // No limit order has been placed, so no order cancelation is necessary.
+        return process.exit();
+    }
+
     console.log('\nAborting trade...');
 
     // Cancel the limit order.
