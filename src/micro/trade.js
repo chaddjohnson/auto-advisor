@@ -61,7 +61,7 @@ tasks.push(function(taskCallback) {
             }
 
             // Ensure sufficient day trading buying power.
-            if (investment < 50000 || investment > data.dayTradingBuyingPower) {
+            if (investment > data.dayTradingBuyingPower) {
                 return parallelTaskCallback('Investment of ' + investment + ' exceeds day trading buying power of ' + data.dayTradingBuyingPower + '.');
             }
 
