@@ -256,7 +256,7 @@ tasks.push(function(taskCallback) {
             }
 
             process.stdout.cursorTo(4);
-            process.stdout.write('                                                                                                         ');
+            process.stdout.write('                                                                                                    ');
 
             process.stdout.cursorTo(4);
             process.stdout.write(colors.bold.blue(symbol) + '\t');
