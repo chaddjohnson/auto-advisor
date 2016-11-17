@@ -59,7 +59,7 @@ tasks.push(function(taskCallback) {
 
             if (!investment) {
                 // No investment was specified, so use all day trading buying power.
-                investment = data.dayTradingBuyingPower - commission;
+                investment = (data.dayTradingBuyingPower - commission) - 100;
             }
 
             // Ensure sufficient day trading buying power.
