@@ -25,6 +25,7 @@ var averagePrice = 0;
 var holdingCostBasis = 0;
 var targetSellPrice = 0;
 var limitOrderId = '';
+var streamingRequest = null;
 
 // Tasks to execute.
 var tasks = [];
@@ -183,7 +184,8 @@ tasks.push(function(taskCallback) {
     console.log();
 
     var targetReached = false;
-    var streamingRequest = tradingClient.streamQuotes(symbol);
+    
+    streamingRequest = tradingClient.streamQuotes(symbol);
 
     streamingRequest.on('response', function(response) {
         var chunk = '';
@@ -249,6 +251,9 @@ tasks.push(function(taskCallback) {
             }
 
             process.stdout.cursorTo(4);
+            process.stdout.write('                                                                                          ');
+
+            process.stdout.cursorTo(4);
             process.stdout.write(colors.bold.blue(symbol) + '\t\t');
             process.stdout.write(colors.bold(shareCount) + '\t');
             process.stdout.write(colors.bold(lastQuote.bid) + '\t');
@@ -268,8 +273,6 @@ tasks.push(function(taskCallback) {
                 process.stdout.write(colors.bold(dollarChange.toFixed(2) + ' (' + percentChange.toFixed(2) + '%)\t'));
                 process.stdout.write(colors.bold(formatDollars(profitLoss)));
             }
-
-            process.stdout.write('    ');
         });
     });
 
@@ -348,6 +351,11 @@ process.on('SIGINT', function() {
     if (!limitOrderId) {
         // No limit order has been placed, so no order cancelation is necessary.
         return process.exit();
+    }
+
+    if (streamingRequest) {
+        // Terminate streaming.
+        streamingRequest.abort();
     }
 
     console.log('\nAborting trade...');
