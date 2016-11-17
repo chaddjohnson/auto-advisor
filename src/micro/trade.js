@@ -188,7 +188,13 @@ tasks.push(function(taskCallback) {
     streamingRequest.on('response', function(response) {
         var chunk = '';
         var chunkCount = 0;
-        var lastTrade = null;
+        var lastQuote = {
+            bid: initialQuote.bidPrice,
+            ask: initialQuote.askPrice
+        };
+        var lastTrade = {
+            last: initialQuote.lastPrice
+        };
         var dollarChange = 0;
         var percentChange = 0;
         var profitLoss = 0;
@@ -227,26 +233,27 @@ tasks.push(function(taskCallback) {
             }
 
             if (trade) {
-                trade.last = parseFloat(trade.last);
-                
                 lastTrade = JSON.parse(JSON.stringify(trade));
+                lastTrade.last = parseFloat(trade.last);
             }
 
             if (quote) {
-                quote.bid = parseFloat(quote.bid);
-                quote.ask = parseFloat(quote.ask);
+                lastQuote = JSON.parse(JSON.stringify(quote));
 
-                dollarChange = quote.bid - initialQuote.bidPrice;
-                percentChange = ((quote.bid / initialQuote.bidPrice) - 1) * 100;
-                profitLoss = ((quote.bid / initialQuote.bidPrice) - 1) * holdingCostBasis;
+                lastQuote.bid = parseFloat(lastQuote.bid);
+                lastQuote.ask = parseFloat(lastQuote.ask);
+
+                dollarChange = lastQuote.bid - initialQuote.bidPrice;
+                percentChange = ((lastQuote.bid / initialQuote.bidPrice) - 1) * 100;
+                profitLoss = ((lastQuote.bid / initialQuote.bidPrice) - 1) * holdingCostBasis;
             }
 
             process.stdout.cursorTo(4);
             process.stdout.write(colors.bold.blue(symbol) + '\t\t');
             process.stdout.write(colors.bold(shareCount) + '\t');
-            process.stdout.write(colors.bold((quote && quote.bid) || initialQuote.bidPrice) + '\t');
-            process.stdout.write(colors.bold((quote && quote.ask) || initialQuote.askPrice) + '\t');
-            process.stdout.write(colors.bold((lastTrade && lastTrade.last) || initialQuote.lastPrice) + '\t');
+            process.stdout.write(colors.bold(lastQuote.bid) + '\t');
+            process.stdout.write(colors.bold(lastQuote.ask) + '\t');
+            process.stdout.write(colors.bold(lastTrade.last) + '\t');
             process.stdout.write(colors.bold(targetSellPrice.toFixed(2)) + '\t');
 
             if (percentChange > 0) {
@@ -263,10 +270,6 @@ tasks.push(function(taskCallback) {
             }
 
             process.stdout.write('    ');
-
-            if (trade) {
-                lastTrade = JSON.parse(JSON.stringify(trade));
-            }
         });
     });
 
