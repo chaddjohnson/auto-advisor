@@ -206,7 +206,7 @@ tasks.push(function(taskCallback) {
         var percentChange = 0;
         var profitLoss = 0;
 
-        console.log('    symbol\tshares\tbid\task\tlast\ttarget\tchange\t\tprofit/loss');
+        console.log('    symbol\tshares\tbid\task\tlast\ttarget\taverage\tchange\t\tprofit/loss');
         process.stdout.cursorTo(4);
 
         response.setEncoding('utf8');
@@ -256,15 +256,16 @@ tasks.push(function(taskCallback) {
             }
 
             process.stdout.cursorTo(4);
-            process.stdout.write('                                                                                               ');
+            process.stdout.write('                                                                                                         ');
 
             process.stdout.cursorTo(4);
-            process.stdout.write(colors.bold.blue(symbol) + '\t\t');
+            process.stdout.write(colors.bold.blue(symbol) + '\t');
             process.stdout.write(colors.bold(shareCount) + '\t');
             process.stdout.write(colors.bold(lastQuote.bid) + '\t');
             process.stdout.write(colors.bold(lastQuote.ask) + '\t');
             process.stdout.write(colors.bold(lastTrade.last) + '\t');
             process.stdout.write(colors.bold(targetSellPrice.toFixed(2)) + '\t');
+            process.stdout.write(colors.bold(averagePrice.toFixed(2)) + '\t');
 
             if (percentChange > 0) {
                 process.stdout.write(colors.bold.green(dollarChange.toFixed(2) + ' (' + percentChange.toFixed(2) + '%)\t'));
@@ -353,33 +354,35 @@ async.series(tasks, function(error) {
 });
 
 process.on('SIGINT', function() {
-    aborting = true;
-
     if (!limitOrderId) {
         // No limit order has been placed, so no order cancelation is necessary.
         return process.exit();
     }
 
-    console.log('\nAborting trade...');
+    if (!aborting) {
+        console.log('\nAborting trade...');
 
-    // Cancel the limit order.
-    tradingClient.cancelOrder(limitOrderId, symbol).then(function() {
-        console.log('Sell limit order canceled.');
+        aborting = true;
 
-        // Wait for the cancelation to complete.
-        setTimeout(function() {
-            console.log('Placing sell market order...');
+        // Cancel the limit order.
+        tradingClient.cancelOrder(limitOrderId, symbol).then(function() {
+            console.log('Sell limit order canceled.');
 
-            // Create a market sell order.
-            tradingClient.sell(symbol, shareCount).then(function() {
-                console.log('Sell market order placed successfully.');
-            }).catch(function(error) {
-                console.error(colors.red('Unable to place sell market order: ' + (error.message || error)));
-            }).finally(function() {
-                process.exit();
-            });
-        }, 1000);
-    }).catch(function(error) {
-        console.error(colors.red('Unable to cancel sell limit order: ' + (error.message || error)));
-    });
+            // Wait for the cancelation to complete.
+            setTimeout(function() {
+                console.log('Placing sell market order...');
+
+                // Create a market sell order.
+                tradingClient.sell(symbol, shareCount).then(function() {
+                    console.log('Sell market order placed successfully.');
+                }).catch(function(error) {
+                    console.error(colors.red('Unable to place sell market order: ' + (error.message || error)));
+                }).finally(function() {
+                    process.exit();
+                });
+            }, 1000);
+        }).catch(function(error) {
+            console.error(colors.red('Unable to cancel sell limit order: ' + (error.message || error)));
+        });
+    }
 });
