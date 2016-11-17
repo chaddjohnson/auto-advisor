@@ -94,13 +94,13 @@ tasks.push(function(taskCallback) {
 tasks.push(function(taskCallback) {
     console.log('Verifying bid/ask spread...');
 
-    // var bidAskSpreadMaximum = 0.0002;
-    // var bidAskSpread = (initialQuote.askPrice / initialQuote.bidPrice) - 1;
+    var bidAskSpreadMaximum = 0.000175;
+    var bidAskSpread = (initialQuote.askPrice / initialQuote.bidPrice) - 1;
 
-    // // Verify the bid/ask spread is not too great.
-    // if (bidAskSpread > bidAskSpreadMaximum) {
-    //     return taskCallback('Bid/ask spread of ' + bidAskSpread + ' exceeds maximum of ' + bidAskSpreadMaximum + '.');
-    // }
+    // Verify the bid/ask spread is not too great.
+    if (bidAskSpread > bidAskSpreadMaximum) {
+        return taskCallback('Bid/ask spread of ' + bidAskSpread + ' exceeds maximum of ' + bidAskSpreadMaximum + '.');
+    }
 
     taskCallback();
 });
@@ -250,9 +250,9 @@ tasks.push(function(taskCallback) {
                 lastQuote.bid = parseFloat(lastQuote.bid);
                 lastQuote.ask = parseFloat(lastQuote.ask);
 
-                dollarChange = lastQuote.bid - initialQuote.bidPrice;
-                percentChange = ((lastQuote.bid / initialQuote.bidPrice) - 1) * 100;
-                profitLoss = ((lastQuote.bid / initialQuote.bidPrice) - 1) * holdingCostBasis;
+                dollarChange = lastQuote.bid - averagePrice;
+                percentChange = ((lastQuote.bid / averagePrice) - 1) * 100;
+                profitLoss = ((lastQuote.bid / averagePrice) - 1) * holdingCostBasis;
             }
 
             process.stdout.cursorTo(4);
