@@ -21,7 +21,7 @@ mongoose.connection.on('error', console.error.bind(console, 'Database connection
 function stream() {
     request.on('response', function (response) {
         var chunk = '';
-        var errorCount = 0;
+        var chunkCount = 0;
         var lastQuotes = {};
         var lastTrades = {};
 
@@ -36,16 +36,18 @@ function stream() {
             try {
                 jsonData = JSON.parse(chunk + data);
                 chunk = '';
-                errorCount = 0;
+                chunkCount = 0;
             }
             catch (error) {
-                chunk = data;
-                errorCount++;
-
-                if (errorCount >= 3) {
+                if (chunkCount >= 3) {
                     chunk = '';
-                    errorCount = 0;
+                    chunkCount = 0;
                 }
+
+                chunk += data;
+                chunkCount++;
+
+                return;
             }
 
             quote = jsonData && jsonData.quote;

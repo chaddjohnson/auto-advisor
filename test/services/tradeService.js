@@ -32,7 +32,10 @@ app.get('/quotes/:symbol', function(request, response) {
                 quotes: {
                     quote: {
                         datetime: currentQuote.date + 'T' + '19:25:00Z',
+                        bid: currentQuote.close.toString(),
+                        ask: currentQuote.close.toString(),
                         last: currentQuote.close.toString(),
+                        adv_90: '12345678',
                         pcls: previousQuote ? previousQuote.close.toString() : currentQuote.close.toString()
                     }
                 },
