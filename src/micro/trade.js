@@ -259,11 +259,11 @@ tasks.push(function(taskCallback) {
             process.stdout.write('                                                                                                    ');
 
             process.stdout.cursorTo(4);
-            process.stdout.write(colors.bold.blue(symbol) + '\t');
+            process.stdout.write(colors.bold.blue(symbol) + '\t\t');
             process.stdout.write(colors.bold(shareCount) + '\t');
-            process.stdout.write(colors.bold(lastQuote.bid) + '\t');
-            process.stdout.write(colors.bold(lastQuote.ask) + '\t');
-            process.stdout.write(colors.bold(lastTrade.last) + '\t');
+            process.stdout.write(colors.bold(lastQuote.bid.toFixed(2)) + '\t');
+            process.stdout.write(colors.bold(lastQuote.ask.toFixed(2)) + '\t');
+            process.stdout.write(colors.bold(lastTrade.last.toFixed(2)) + '\t');
             process.stdout.write(colors.bold(targetSellPrice.toFixed(2)) + '\t');
             process.stdout.write(colors.bold(averagePrice.toFixed(2)) + '\t');
 
