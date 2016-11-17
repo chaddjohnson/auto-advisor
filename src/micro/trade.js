@@ -230,7 +230,7 @@ tasks.push(function(taskCallback) {
             percentChange = ((quote.bid / initialQuote.bid) - 1) * 100;
             profitLoss = ((quote.bid / initialQuote.bid) - 1) * holdingCostBasis;
 
-            cursorTo(4);
+            process.stdout.cursorTo(4);
             process.stdout.write(colors.bold.blue(symbol) + '\t');
             process.stdout.write(colors.bold(shareCount) + '\t');
             process.stdout.write(colors.bold((quote && quote.bid) || initialQuote.bidPrice) + '\t');
