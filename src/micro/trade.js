@@ -189,10 +189,6 @@ tasks.push(function(taskCallback) {
     streamingRequest = tradingClient.streamQuotes(symbol);
 
     streamingRequest.on('response', function(response) {
-        if (aborting) {
-            return;
-        }
-
         var chunk = '';
         var chunkCount = 0;
         var lastQuote = {
@@ -211,6 +207,10 @@ tasks.push(function(taskCallback) {
 
         response.setEncoding('utf8');
         response.on('data', function(data) {
+            if (aborting) {
+                return;
+            }
+
             var jsonData = null;
             var quote = null;
             var trade = null;
