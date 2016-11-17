@@ -26,6 +26,7 @@ var holdingCostBasis = 0;
 var targetSellPrice = 0;
 var limitOrderId = '';
 var streamingRequest = null;
+var aborting = false;
 
 // Tasks to execute.
 var tasks = [];
@@ -188,6 +189,10 @@ tasks.push(function(taskCallback) {
     streamingRequest = tradingClient.streamQuotes(symbol);
 
     streamingRequest.on('response', function(response) {
+        if (aborting) {
+            return;
+        }
+
         var chunk = '';
         var chunkCount = 0;
         var lastQuote = {
@@ -348,14 +353,11 @@ async.series(tasks, function(error) {
 });
 
 process.on('SIGINT', function() {
+    aborting = true;
+
     if (!limitOrderId) {
         // No limit order has been placed, so no order cancelation is necessary.
         return process.exit();
-    }
-
-    if (streamingRequest) {
-        // Terminate streaming.
-        streamingRequest.abort();
     }
 
     console.log('\nAborting trade...');
