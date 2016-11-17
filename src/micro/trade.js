@@ -147,7 +147,7 @@ tasks.push(function(taskCallback) {
                 averagePrice = holding.averagePrice;
                 holdingCostBasis = holding.costBasis;
 
-                console.log(holding.quantity + ' shares held at average price of ' + averagePrice + ' and cost basis of ' + formatDollars(holdingCostBasis) + '.');
+                console.log(holding.quantity + ' shares held at average price of ' + averagePrice.toFixed(2) + ' and cost basis of ' + formatDollars(holdingCostBasis) + '.');
 
                 taskCallback();
             }
