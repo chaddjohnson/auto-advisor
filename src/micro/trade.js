@@ -93,7 +93,7 @@ tasks.push(function(taskCallback) {
     console.log('Verifying bid/ask spread...');
 
     // var bidAskSpreadMaximum = 0.0002;
-    // var bidAskSpread = (initialQuote.ask / initialQuote.bid) - 1;
+    // var bidAskSpread = (initialQuote.askPrice / initialQuote.bidPrice) - 1;
 
     // // Verify the bid/ask spread is not too great.
     // if (bidAskSpread > bidAskSpreadMaximum) {
@@ -188,13 +188,13 @@ tasks.push(function(taskCallback) {
     streamingRequest.on('response', function(response) {
         var chunk = '';
         var chunkCount = 0;
-        var lastQuote = null;
         var lastTrade = null;
         var dollarChange = 0;
         var percentChange = 0;
         var profitLoss = 0;
 
-        console.log('    symbol\tshares\tbid\task\tlast\ttarget\tchange\tprofit/loss');
+        console.log('    symbol\tshares\tbid\task\tlast\ttarget\tchange\t\tprofit/loss');
+        process.stdout.cursorTo(4);
 
         response.setEncoding('utf8');
         response.on('data', function(data) {
@@ -226,17 +226,28 @@ tasks.push(function(taskCallback) {
                 return;
             }
 
-            dollarChange = quote.bid - initialQuote.bid;
-            percentChange = ((quote.bid / initialQuote.bid) - 1) * 100;
-            profitLoss = ((quote.bid / initialQuote.bid) - 1) * holdingCostBasis;
+            if (trade) {
+                trade.last = parseFloat(trade.last);
+                
+                lastTrade = JSON.parse(JSON.stringify(trade));
+            }
+
+            if (quote) {
+                quote.bid = parseFloat(quote.bid);
+                quote.ask = parseFloat(quote.ask);
+
+                dollarChange = quote.bid - initialQuote.bidPrice;
+                percentChange = ((quote.bid / initialQuote.bidPrice) - 1) * 100;
+                profitLoss = ((quote.bid / initialQuote.bidPrice) - 1) * holdingCostBasis;
+            }
 
             process.stdout.cursorTo(4);
-            process.stdout.write(colors.bold.blue(symbol) + '\t');
+            process.stdout.write(colors.bold.blue(symbol) + '\t\t');
             process.stdout.write(colors.bold(shareCount) + '\t');
             process.stdout.write(colors.bold((quote && quote.bid) || initialQuote.bidPrice) + '\t');
             process.stdout.write(colors.bold((quote && quote.ask) || initialQuote.askPrice) + '\t');
-            process.stdout.write(colors.bold((lastTrade && lastTrade.last) || quote.lastPrice) + '\t');
-            process.stdout.write(colors.bold(targetSellPrice) + '\t');
+            process.stdout.write(colors.bold((lastTrade && lastTrade.last) || initialQuote.lastPrice) + '\t');
+            process.stdout.write(colors.bold(targetSellPrice.toFixed(2)) + '\t');
 
             if (percentChange > 0) {
                 process.stdout.write(colors.bold.green(dollarChange.toFixed(2) + ' (' + percentChange.toFixed(2) + '%)\t'));
@@ -253,9 +264,6 @@ tasks.push(function(taskCallback) {
 
             process.stdout.write('    ');
 
-            if (quote) {
-                lastQuote = JSON.parse(JSON.stringify(quote));
-            }
             if (trade) {
                 lastTrade = JSON.parse(JSON.stringify(trade));
             }
