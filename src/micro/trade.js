@@ -22,6 +22,7 @@ var initialCash = 0;
 var initialQuote = null;
 var shareCount = 0;
 var averagePrice = 0;
+var holdingCostBasis = 0;
 var targetSellPrice = 0;
 var limitOrderId = '';
 
@@ -142,8 +143,9 @@ tasks.push(function(taskCallback) {
 
             if (holding && holding.quantity === shareCount) {
                 averagePrice = holding.averagePrice;
+                holdingCostBasis = holding.costBasis;
 
-                console.log(holding.quantity + ' shares held at average price of ' + averagePrice + '.');
+                console.log(holding.quantity + ' shares held at average price of ' + averagePrice + ' and cost basis of ' + formatDollars(holdingCostBasis) + '.');
 
                 taskCallback();
             }
@@ -190,8 +192,9 @@ tasks.push(function(taskCallback) {
         var lastTrade = null;
         var dollarChange = 0;
         var percentChange = 0;
+        var profitLoss = 0;
 
-        console.log('symbol\tshares\tbid\task\tlast\ttarget\tchange');
+        console.log('    symbol\tshares\tbid\task\tlast\ttarget\tchange\tprofit/loss');
 
         response.setEncoding('utf8');
         response.on('data', function(data) {
@@ -223,10 +226,9 @@ tasks.push(function(taskCallback) {
                 return;
             }
 
-            if (lastQuote) {
-                dollarChange = quote.bid - lastQuote.bid;
-                percentChange = ((quote.bid / lastQuote.bid) - 1) * 100;
-            }
+            dollarChange = quote.bid - initialQuote.bid;
+            percentChange = ((quote.bid / initialQuote.bid) - 1) * 100;
+            profitLoss = ((quote.bid / initialQuote.bid) - 1) * holdingCostBasis;
 
             cursorTo(4);
             process.stdout.write(colors.bold.blue(symbol) + '\t');
@@ -237,13 +239,16 @@ tasks.push(function(taskCallback) {
             process.stdout.write(colors.bold(targetSellPrice) + '\t');
 
             if (percentChange > 0) {
-                process.stdout.write(colors.bold.green(dollarChange.toFixed(2) + ' (' + percentChange.toFixed(2) + '%)'));
+                process.stdout.write(colors.bold.green(dollarChange.toFixed(2) + ' (' + percentChange.toFixed(2) + '%)\t'));
+                process.stdout.write(colors.bold.green(formatDollars(profitLoss)));
             }
             else if (percentChange < 0) {
-                process.stdout.write(colors.bold.red(dollarChange.toFixed(2) + ' (' + percentChange.toFixed(2) + '%)'));
+                process.stdout.write(colors.bold.red(dollarChange.toFixed(2) + ' (' + percentChange.toFixed(2) + '%)\t'));
+                process.stdout.write(colors.bold.red(formatDollars(profitLoss)));
             }
             else {
-                process.stdout.write(colors.bold(dollarChange.toFixed(2) + ' (' + percentChange.toFixed(2) + '%)'));
+                process.stdout.write(colors.bold(dollarChange.toFixed(2) + ' (' + percentChange.toFixed(2) + '%)\t'));
+                process.stdout.write(colors.bold(formatDollars(profitLoss)));
             }
 
             process.stdout.write('    ');
@@ -304,13 +309,13 @@ tasks.push(function(taskCallback) {
         console.log();
 
         if (profitLoss > 0) {
-            console.log('Profit/loss: ' + colors.bold.green('$' + formatDollars(profitLoss)));
+            console.log('Profit/loss: ' + colors.bold.green(formatDollars(profitLoss)));
         }
         else if (profitLoss < 0) {
-            console.log('Profit/loss: ' + colors.bold.red('$' + formatDollars(profitLoss)));
+            console.log('Profit/loss: ' + colors.bold.red(formatDollars(profitLoss)));
         }
         else {
-            console.log('Profit/loss: ' + colors.bold('$' + formatDollars(profitLoss)));
+            console.log('Profit/loss: ' + colors.bold(formatDollars(profitLoss)));
         }
 
         taskCallback();
