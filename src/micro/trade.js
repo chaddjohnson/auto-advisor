@@ -9,7 +9,7 @@ var _ = require('lodash');
 var colors = require('colors');
 
 // Set up the trading client.
-var tradingClient = require('../../lib/tradingClients/base').factory(config.client, config.brokerage);
+var tradingClient = require('../../lib/tradingClients/base').factory('tradeking', config.brokerage);
 
 // parameters.
 var argv = require('yargs').argv;
