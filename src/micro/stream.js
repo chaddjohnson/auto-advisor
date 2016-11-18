@@ -13,12 +13,13 @@ var Quote = require('./quoteModel');
 var symbols = ['AMZN','AAPL','FB','MSFT'];
 
 var client = new OAuth(null, null, config.brokerage.consumerKey, config.brokerage.consumerSecret, '1.0', null, 'HMAC-SHA1');
-var request = client.get('https://stream.tradeking.com/v1/market/quotes.json?symbols=' + symbols.join(','), config.brokerage.accessToken, config.brokerage.accessSecret);
 
 mongoose.connect('mongodb://localhost/trading');
 mongoose.connection.on('error', console.error.bind(console, 'Database connection error:'));
 
 function stream() {
+    var request = client.get('https://stream.tradeking.com/v1/market/quotes.json?symbols=' + symbols.join(','), config.brokerage.accessToken, config.brokerage.accessSecret);
+
     request.on('response', function (response) {
         var chunk = '';
         var chunkCount = 0;
