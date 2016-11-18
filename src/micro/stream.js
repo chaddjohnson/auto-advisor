@@ -10,7 +10,7 @@ var colors = require('colors');
 var Quote = require('./quoteModel');
 
 // Settings
-var symbols = ['AMZN','AAPL','FB','MSFT'];
+var symbols = ['AMZN','AAPL','FB','MSFT','QQQ'];
 
 var client = new OAuth(null, null, config.brokerage.consumerKey, config.brokerage.consumerSecret, '1.0', null, 'HMAC-SHA1');
 
