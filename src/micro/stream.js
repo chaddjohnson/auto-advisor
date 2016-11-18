@@ -32,7 +32,8 @@ function stream() {
             var jsonData = null;
             var quote = null;
             var trade = null;
-            var newQuote = null;
+            var newQuoteData = null;
+            var symbol;
 
             try {
                 jsonData = JSON.parse(chunk + data);
@@ -58,32 +59,35 @@ function stream() {
                 return;
             }
 
-            if (quote && lastTrades[quote.symbol]) {
-                newQuote = new Quote({
-                    symbol: quote.symbol,
-                    bidPrice: parseFloat(quote.bid),
-                    askPrice: parseFloat(quote.ask),
-                    lastPrice: parseFloat(lastTrades[quote.symbol].last),
-                    timestamp: quote.timestamp,
-                    tradeVolume: parseInt(lastTrades[quote.symbol].vl),
-                    cumulativeVolume: parseInt(lastTrades[quote.symbol].cvol)
-                });
-
-                newQuote.save(function(error) {
-                    if (error) {
-                        console.error(error.toString().red);
-                    }
-                });
-
-                console.log(JSON.stringify(newQuote.toJSON()));
-            }
+            symbol = (quote && quote.symbol) || (trade && trade.symbol);
 
             if (quote) {
-                lastQuotes[quote.symbol] = JSON.parse(JSON.stringify(quote));
+                lastQuotes[symbol] = JSON.parse(JSON.stringify(quote));
             }
             if (trade) {
-                lastTrades[trade.symbol] = JSON.parse(JSON.stringify(trade));
+                lastTrades[symbol] = JSON.parse(JSON.stringify(trade));
             }
+
+            if (!lastQuotes[symbol] || !lastTrades[symbol]) {
+                return;
+            }
+
+            newQuoteData = {
+                symbol: symbol,
+                bidPrice: parseFloat(lastQuotes[symbol].bid),
+                askPrice: parseFloat(lastQuotes[symbol].ask),
+                lastPrice: parseFloat(lastTrades[symbol].last),
+                timestamp: lastQuotes[symbol].timestamp,
+                tradeVolume: parseInt(lastTrades[symbol].vl),
+                cumulativeVolume: parseInt(lastTrades[symbol].cvol)
+            };
+            Quote.create(newQuoteData, function(error) {
+                if (error) {
+                    console.error(error.toString().red);
+                }
+            });
+
+            console.log(JSON.stringify(newQuoteData));
         });
     });
     request.on('error', function(error) {
@@ -93,7 +97,7 @@ function stream() {
         console.error('Connection closed');
 
         // Restart streaming.
-        setTimeout(stream, 1000);
+        setTimeout(stream, 500);
     });
     request.end();
 }
