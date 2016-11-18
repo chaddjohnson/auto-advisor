@@ -25,7 +25,7 @@ var averagePrice = 0;
 var holdingCostBasis = 0;
 var targetSellPrice = 0;
 var limitOrderId = '';
-var streamingRequest = null;
+var stream = null;
 var aborting = false;
 
 // Tasks to execute.
@@ -185,107 +185,54 @@ tasks.push(function(taskCallback) {
     console.log();
 
     var targetReached = false;
-    
-    streamingRequest = tradingClient.streamQuotes(symbol);
+    var dollarChange = 0;
+    var percentChange = 0;
+    var profitLoss = 0;
 
-    streamingRequest.on('response', function(response) {
-        var chunk = '';
-        var chunkCount = 0;
-        var lastQuote = {
-            bid: initialQuote.bidPrice,
-            ask: initialQuote.askPrice
-        };
-        var lastTrade = {
-            last: initialQuote.lastPrice
-        };
-        var dollarChange = 0;
-        var percentChange = 0;
-        var profitLoss = 0;
+    console.log('    symbol\tshares\tbid\task\tlast\ttarget\taverage\tchange\t\tprofit/loss');
+    process.stdout.cursorTo(4);
 
-        console.log('    symbol\tshares\tbid\task\tlast\ttarget\taverage\tchange\t\tprofit/loss');
+    stream = tradingClient.stream(symbol);
+
+    stream.on('data', function(data) {
+        if (aborting) {
+            return;
+        }
+
+        dollarChange = data.bidPrice - averagePrice;
+        percentChange = ((data.bidPrice / averagePrice) - 1) * 100;
+        profitLoss = ((data.bidPrice / averagePrice) - 1) * holdingCostBasis;
+
         process.stdout.cursorTo(4);
+        process.stdout.write('                                                                                                    ');
 
-        response.setEncoding('utf8');
-        response.on('data', function(data) {
-            if (aborting) {
-                return;
-            }
+        process.stdout.cursorTo(4);
+        process.stdout.write(colors.bold.blue(symbol) + '\t\t');
+        process.stdout.write(colors.bold(shareCount) + '\t');
+        process.stdout.write(colors.bold(data.bidPrice.toFixed(2)) + '\t');
+        process.stdout.write(colors.bold(data.askPrice.toFixed(2)) + '\t');
+        process.stdout.write(colors.bold(data.lastPrice.toFixed(2)) + '\t');
+        process.stdout.write(colors.bold(targetSellPrice.toFixed(2)) + '\t');
+        process.stdout.write(colors.bold(averagePrice.toFixed(2)) + '\t');
 
-            var jsonData = null;
-            var quote = null;
-            var trade = null;
-
-            try {
-                jsonData = JSON.parse(chunk + data);
-                chunk = '';
-                chunkCount = 0;
-            }
-            catch (error) {
-                if (chunkCount >= 3) {
-                    chunk = '';
-                    chunkCount = 0;
-                }
-
-                chunk += data;
-                chunkCount++;
-
-                return;
-            }
-
-            quote = jsonData && jsonData.quote;
-            trade = jsonData && jsonData.trade;
-
-            if (!quote && !trade) {
-                return;
-            }
-
-            if (trade) {
-                lastTrade = JSON.parse(JSON.stringify(trade));
-                lastTrade.last = parseFloat(trade.last);
-            }
-
-            if (quote) {
-                lastQuote = JSON.parse(JSON.stringify(quote));
-
-                lastQuote.bid = parseFloat(lastQuote.bid);
-                lastQuote.ask = parseFloat(lastQuote.ask);
-
-                dollarChange = lastQuote.bid - averagePrice;
-                percentChange = ((lastQuote.bid / averagePrice) - 1) * 100;
-                profitLoss = ((lastQuote.bid / averagePrice) - 1) * holdingCostBasis;
-            }
-
-            process.stdout.cursorTo(4);
-            process.stdout.write('                                                                                                    ');
-
-            process.stdout.cursorTo(4);
-            process.stdout.write(colors.bold.blue(symbol) + '\t\t');
-            process.stdout.write(colors.bold(shareCount) + '\t');
-            process.stdout.write(colors.bold(lastQuote.bid.toFixed(2)) + '\t');
-            process.stdout.write(colors.bold(lastQuote.ask.toFixed(2)) + '\t');
-            process.stdout.write(colors.bold(lastTrade.last.toFixed(2)) + '\t');
-            process.stdout.write(colors.bold(targetSellPrice.toFixed(2)) + '\t');
-            process.stdout.write(colors.bold(averagePrice.toFixed(2)) + '\t');
-
-            if (percentChange > 0) {
-                process.stdout.write(colors.bold.green(dollarChange.toFixed(2) + ' (' + percentChange.toFixed(2) + '%)\t'));
-                process.stdout.write(colors.bold.green(formatDollars(profitLoss)));
-            }
-            else if (percentChange < 0) {
-                process.stdout.write(colors.bold.red(dollarChange.toFixed(2) + ' (' + percentChange.toFixed(2) + '%)\t'));
-                process.stdout.write(colors.bold.red(formatDollars(profitLoss)));
-            }
-            else {
-                process.stdout.write(colors.bold(dollarChange.toFixed(2) + ' (' + percentChange.toFixed(2) + '%)\t'));
-                process.stdout.write(colors.bold(formatDollars(profitLoss)));
-            }
-        });
+        if (percentChange > 0) {
+            process.stdout.write(colors.bold.green(dollarChange.toFixed(2) + ' (' + percentChange.toFixed(2) + '%)\t'));
+            process.stdout.write(colors.bold.green(formatDollars(profitLoss)));
+        }
+        else if (percentChange < 0) {
+            process.stdout.write(colors.bold.red(dollarChange.toFixed(2) + ' (' + percentChange.toFixed(2) + '%)\t'));
+            process.stdout.write(colors.bold.red(formatDollars(profitLoss)));
+        }
+        else {
+            process.stdout.write(colors.bold(dollarChange.toFixed(2) + ' (' + percentChange.toFixed(2) + '%)\t'));
+            process.stdout.write(colors.bold(formatDollars(profitLoss)));
+        }
     });
 
-    streamingRequest.on('error', function(error) {
+    stream.on('error', function(error) {
         console.error('\n' + colors.red(error.message || error));
     });
-    streamingRequest.on('close', function() {
+    stream.on('close', function() {
         if (targetReached) {
             process.stdout.write('\n');
             taskCallback();
@@ -294,7 +241,6 @@ tasks.push(function(taskCallback) {
             taskCallback('Connection closed');
         }
     });
-    streamingRequest.end();
 
     function checkSellExecution() {
         tradingClient.getHoldings().then(function(data) {
@@ -310,7 +256,7 @@ tasks.push(function(taskCallback) {
                 targetReached = true;
 
                 // Terminate streaming.
-                streamingRequest.abort();
+                stream.abort();
             }
         }).catch(function(error) {
             console.error(colors.red(error.message || error));
