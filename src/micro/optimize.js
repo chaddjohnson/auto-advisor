@@ -84,8 +84,6 @@ tasks.push(function(taskCallback) {
     // Create an initial, randomized population.
     _.times(generateRandomNumber(1, 10), function(index) {
         population.push({
-            consecutiveNegatives: generateRandomNumber(1, 50),
-            consecutivePositives: generateRandomNumber(1, 15),
             emaLength: generateRandomNumber(1, 30),
             emaChangeNegativeBuyThreshold: generateRandomNumber(1, 50),
             emaChangePositiveBuyThreshold: generateRandomNumber(1, 10),
@@ -153,30 +151,22 @@ function mutationFunction(oldPhenotype) {
     // Use oldPhenotype and some random function to make a change to the phenotype.
     switch (propertyIndex) {
         case 0:
-            resultPhenotype.consecutiveNegatives = generateRandomNumber(1, 50);
-            break;
-
-        case 1:
-            resultPhenotype.consecutivePositives = generateRandomNumber(1, 15);
-            break;
-
-        case 2:
             resultPhenotype.emaLength = generateRandomNumber(1, 30);
             break;
 
-        case 3:
+        case 1:
             resultPhenotype.emaChangeNegativeBuyThreshold = generateRandomNumber(1, 50);
             break;
 
-        case 4:
+        case 2:
             resultPhenotype.emaChangePositiveBuyThreshold = generateRandomNumber(1, 10);
             break;
 
-        case 5:
+        case 3:
             resultPhenotype.emaChangeNegativeSellThreshold = generateRandomNumber(1, 10);
             break;
 
-        case 6:
+        case 4:
             resultPhenotype.targetIncrease = generateRandomNumber(0.0000625, 0.001, 7);
     }
 
@@ -188,16 +178,6 @@ function crossoverFunction(phenotypeA, phenotypeB) {
     var result2 = _.clone(phenotypeB);
 
     // Use phenotypeA and B to create phenotype result 1 and 2.
-
-    if (generateRandomNumber(0, 1)) {
-        result1.consecutiveNegatives = phenotypeB.consecutiveNegatives;
-        result2.consecutiveNegatives = phenotypeA.consecutiveNegatives;
-    }
-
-    if (generateRandomNumber(0, 1)) {
-        result1.consecutivePositives = phenotypeB.consecutivePositives;
-        result2.consecutivePositives = phenotypeA.consecutivePositives;
-    }
 
     if (generateRandomNumber(0, 1)) {
         result1.emaLength = phenotypeB.emaLength;
@@ -311,7 +291,7 @@ function backtest(phenotype, showTrades) {
             }
         }
 
-        if (!justBought && shares > 0 && (tick.bidPrice >= targetSellPrice || emaChangeNegativeCount >= phenotype.emaChangeNegativeSellThreshold)) {
+        if (!justBought && shares > 0 && tick.bidPrice >= targetSellPrice) {
             if (showTrades) {
                 console.log('SOLD ' + shares + ' shares at ' +  moment(tick.createdAt).format('YYYY-MM-DD HH:mm:ss') + ' for ' + ((shares * tick.bidPrice - commission)) + ' price ' + tick.bidPrice);
             }
