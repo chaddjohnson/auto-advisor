@@ -236,7 +236,7 @@ function backtest(phenotype, showTrades) {
 
     var accountValue = 0;
     var commission = 4.95;
-    var balance = 200000;
+    var balance = investment;
     var startingBalance = balance;
     var previousBalance = balance;
     var tradeCount = 0;
