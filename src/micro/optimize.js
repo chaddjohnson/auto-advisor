@@ -62,7 +62,7 @@ mongoose.connection.on('error', function(error) {
 // Load data.
 tasks.push(function(taskCallback) {
     var constraints = {
-        symbol: 'MSFT',
+        symbol: symbol,
         createdAt: {
             $gte: new Date(date + 'T00:00:00.000Z'),
             $lte: new Date(date + 'T23:59:59.000Z')
