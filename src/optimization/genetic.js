@@ -35,6 +35,8 @@ var data = require(filePath);
 // Population for the algorithm.
 var population = [];
 
+console.log('Optimizing for ' + symbol);
+
 // Create an initial, randomized population.
 _.times(generateRandomNumber(1, 10), function(index) {
     population.push({
@@ -56,8 +58,6 @@ var geneticAlgorithm = GeneticAlgorithm({
     population: population,
     populationSize: populationSize
 });
-
-console.log('Optimizing for ' + symbol);
 
 // Run the algorithm.
 _.times(evolutionCount, function(index) {

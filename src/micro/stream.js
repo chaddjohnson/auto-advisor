@@ -7,7 +7,7 @@ var config = require('../../config');
 var mongoose = require('mongoose');
 var OAuth = require('oauth').OAuth;
 var _ = require('lodash');
-var Quote = require('./quoteModel');
+var Tick = require('../../lib/models/tick');
 
 // Settings
 var symbols = ['AMZN','AAPL','FB','MSFT','QQQ'];
@@ -28,7 +28,7 @@ function startStreaming() {
         console.log(data);
     });
     stream.on('data', function(data) {
-        Quote.create(data);
+        Tick.create(data);
     });
     stream.on('close', function() {
         // Restart streaming.

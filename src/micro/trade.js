@@ -1,7 +1,7 @@
 'use strict';
 
 // Config
-var config = require('../../config');
+var config = require('../../config.json');
 
 // Libraries
 var async = require('async');
