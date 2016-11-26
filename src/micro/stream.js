@@ -25,6 +25,9 @@ function startStreaming() {
     var stream = tradingClient.stream(symbols);
 
     stream.on('rawData', function(data) {
+        if (new Date().getHours() >= 15) {
+            process.exit();
+        }
         console.log(data);
     });
     stream.on('data', function(data) {
