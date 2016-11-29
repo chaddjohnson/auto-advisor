@@ -35,7 +35,9 @@ function startStreaming() {
         Tick.create(data);
     });
     stream.on('close', function() {
-        // Restart streaming.
-        startStreaming();
+        setTimeout(function() {
+            // Restart streaming.
+            startStreaming();
+        }, 5000);
     });
 }
