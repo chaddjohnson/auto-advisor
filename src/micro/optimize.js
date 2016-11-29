@@ -252,6 +252,7 @@ function backtest(phenotype, showTrades) {
     ticks.forEach(function(tick) {
         var justBought = false;
         var isDayEnd = new Date(tick.createdAt).getHours() === 14 && new Date(tick.createdAt).getMinutes() >= 58;
+        var dayTradingBuyingPower = balance * 4;
 
         cumulativeTicks.push(tick);
 
@@ -277,8 +278,8 @@ function backtest(phenotype, showTrades) {
 
         // Buy if no position and >= n EMA change negatives followed by m change positives.
         if (shares === 0 && recentEmaChangeNegativeCount >= phenotype.emaChangeNegativeBuyThreshold && emaChangePositiveCount >= phenotype.emaChangePositiveBuyThreshold) {
-            shares = Math.floor(balance / tick.askPrice);
-            balance = balance - (shares * tick.askPrice + commission);
+            shares = Math.floor((dayTradingBuyingPower - commission) / tick.askPrice);
+            balance -= ((shares * tick.askPrice) + commission);
             targetSellPrice = tick.askPrice * (1 + phenotype.targetIncrease);
             justBought = true;
 

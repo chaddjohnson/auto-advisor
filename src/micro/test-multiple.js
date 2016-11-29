@@ -23,14 +23,13 @@ if (!investment) {
 /**
  * Settings
  */
-var symbols = ['AAPL','BAC','FB','AMZN','MSFT','QQQ'];
+var symbols = ['AAPL','BAC','FB','AMZN','MSFT'];
 var phenotypes = {
-    AAPL: {"emaLength":25,"emaChangeNegativeBuyThreshold":49,"emaChangePositiveBuyThreshold":1,"emaChangeNegativeSellThreshold":2,"targetIncrease":0.0006359},
+    AAPL: {"emaLength":25,"emaChangeNegativeBuyThreshold":49,"emaChangePositiveBuyThreshold":1,"emaChangeNegativeSellThreshold":9,"targetIncrease":0.0006364},
     // BAC: {},
-    FB: {"emaLength":8,"emaChangeNegativeBuyThreshold":35,"emaChangePositiveBuyThreshold":1,"emaChangeNegativeSellThreshold":8,"targetIncrease":0.0009914},
-    AMZN: {"emaLength":22,"emaChangeNegativeBuyThreshold":46,"emaChangePositiveBuyThreshold":1,"emaChangeNegativeSellThreshold":4,"targetIncrease":0.0009596},
-    MSFT: {"emaLength":13,"emaChangeNegativeBuyThreshold":25,"emaChangePositiveBuyThreshold":1,"emaChangeNegativeSellThreshold":4,"targetIncrease":0.000379},
-    QQQ: {"emaLength":14,"emaChangeNegativeBuyThreshold":27,"emaChangePositiveBuyThreshold":1,"emaChangeNegativeSellThreshold":4,"targetIncrease":0.0007931}
+    FB: {"emaLength":2,"emaChangeNegativeBuyThreshold":14,"emaChangePositiveBuyThreshold":1,"emaChangeNegativeSellThreshold":6,"targetIncrease":0.0009523},
+    AMZN: {"emaLength":28,"emaChangeNegativeBuyThreshold":41,"emaChangePositiveBuyThreshold":1,"emaChangeNegativeSellThreshold":7,"targetIncrease":0.0008379},
+    MSFT: {"emaLength":18,"emaChangeNegativeBuyThreshold":27,"emaChangePositiveBuyThreshold":1,"emaChangeNegativeSellThreshold":7,"targetIncrease":0.000489}
 };
 
 /**
@@ -72,6 +71,7 @@ Tick.find({symbol: {$in: symbols}}).sort({createdAt: 1}).exec(function(error, ti
     });
 
     console.log({
+        startingBalance: trader.getStartingBalance(),
         balance: trader.getBalance(),
         profit: trader.getProfit(),
         loss: trader.getLoss(),
