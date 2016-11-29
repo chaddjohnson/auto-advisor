@@ -10,9 +10,6 @@ var GeneticAlgorithm = require('geneticalgorithm');
 var EmaIndicator = require('../../lib/indicators/ema');
 var Tick = require('../../lib/models/tick');
 
-// Config
-var config = require('../../config.json');
-
 // Get parameters.
 var argv = require('yargs').argv;
 var symbol = argv.symbol;
@@ -43,9 +40,6 @@ if (!date) {
     process.exit(1);
 }
 
-// Set up the trading client.
-var tradingClient = require('../../lib/tradingClients/base').factory('tradeking', config.brokerage);
-
 // State
 var population = [];
 var ticks = [];
@@ -54,6 +48,7 @@ var bestPhenotype = null;
 // Synchronous tasks
 var tasks = [];
 
+// Connect to the database.
 mongoose.connect('mongodb://localhost/trading');
 mongoose.connection.on('error', function(error) {
     console.error(colors.red('Database connection error: ' + error));
@@ -127,8 +122,8 @@ async.series(tasks, function(error) {
 
     // Show the results.
     process.stdout.write('\n');
-    console.log(colors.green(JSON.stringify(bestPhenotype)));
     console.log(colors.blue(JSON.stringify(backtest(bestPhenotype, true))));
+    console.log(colors.green(JSON.stringify(bestPhenotype)));
     process.stdout.write('\n');
 
     process.exit();
@@ -256,6 +251,7 @@ function backtest(phenotype, showTrades) {
 
     ticks.forEach(function(tick) {
         var justBought = false;
+        var isDayEnd = new Date(tick.createdAt).getHours() === 14 && new Date(tick.createdAt).getMinutes() >= 58;
 
         cumulativeTicks.push(tick);
 
@@ -287,13 +283,14 @@ function backtest(phenotype, showTrades) {
             justBought = true;
 
             if (showTrades) {
-                console.log('BOUGHT ' + shares + ' shares at ' +  moment(tick.createdAt).format('YYYY-MM-DD HH:mm:ss') + ' for ' + ((shares * tick.askPrice + commission)) + ' price ' + tick.askPrice + ' target ' + targetSellPrice);
+                console.log('BOUGHT ' + shares + ' shares of ' + symbol + ' at ' +  moment(tick.createdAt).format('YYYY-MM-DD HH:mm:ss') + ' for ' + ((shares * tick.askPrice + commission)) + ' price ' + tick.askPrice + ' target ' + targetSellPrice);
             }
         }
 
-        if (!justBought && shares > 0 && tick.bidPrice >= targetSellPrice) {
+        if (!justBought && shares > 0 && ((targetSellPrice && tick.bidPrice >= targetSellPrice) || isDayEnd)) {
             if (showTrades) {
-                console.log('SOLD ' + shares + ' shares at ' +  moment(tick.createdAt).format('YYYY-MM-DD HH:mm:ss') + ' for ' + ((shares * tick.bidPrice - commission)) + ' price ' + tick.bidPrice);
+                console.log('SOLD ' + shares + ' shares of ' + symbol + ' at ' +  moment(tick.createdAt).format('YYYY-MM-DD HH:mm:ss') + ' for ' + ((shares * tick.bidPrice - commission)) + ' price ' + tick.bidPrice);
+                console.log();
             }
 
             balance = balance + (shares * tick.bidPrice - commission);

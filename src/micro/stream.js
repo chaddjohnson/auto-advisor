@@ -1,7 +1,7 @@
 'use strict';
 
 // Config
-var config = require('../../config');
+var config = require('../../config.json');
 
 // Libraries
 var mongoose = require('mongoose');
@@ -10,7 +10,7 @@ var _ = require('lodash');
 var Tick = require('../../lib/models/tick');
 
 // Settings
-var symbols = ['AMZN','AAPL','FB','MSFT','QQQ'];
+var symbols = ['AAPL','AMZN','BAC','FB','MSFT','QQQ'];
 
 mongoose.connect('mongodb://localhost/trading');
 mongoose.connection.on('error', console.error.bind(console, 'Database connection error:'));
@@ -25,6 +25,7 @@ function startStreaming() {
     var stream = tradingClient.stream(symbols);
 
     stream.on('rawData', function(data) {
+        // Stop streaming when the market closes.
         if (new Date().getHours() >= 15) {
             process.exit();
         }

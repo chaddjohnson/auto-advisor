@@ -1,7 +1,7 @@
 'use strict';
 
 // Config
-var config = require('../../config.json');
+var config = require('../../../config.json');
 
 // Libraries
 var async = require('async');
@@ -9,7 +9,7 @@ var _ = require('lodash');
 var colors = require('colors');
 
 // Set up the trading client.
-var tradingClient = require('../../lib/tradingClients/base').factory('tradeking', config.brokerage);
+var tradingClient = require('../../../lib/tradingClients/base').factory('tradeking', config.brokerage);
 
 // parameters.
 var argv = require('yargs').argv;
