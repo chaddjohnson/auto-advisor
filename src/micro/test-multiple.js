@@ -37,7 +37,6 @@ var phenotypes = {
  */
 var trader = null;
 var tradeSignalers = [];
-var stream = null;
 
 // Connect to the database.
 mongoose.connect('mongodb://localhost/trading');
