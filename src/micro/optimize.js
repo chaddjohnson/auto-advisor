@@ -185,22 +185,22 @@ function crossoverFunction(phenotypeA, phenotypeB) {
         result2.emaChangeNegativeBuyThreshold = phenotypeA.emaChangeNegativeBuyThreshold;
     }
 
-    if (generateRandomNumber(1, 1)) {
+    if (generateRandomNumber(0, 1)) {
         result1.emaChangePositiveBuyThreshold = phenotypeB.emaChangePositiveBuyThreshold;
         result2.emaChangePositiveBuyThreshold = phenotypeA.emaChangePositiveBuyThreshold;
     }
 
-    if (generateRandomNumber(1, 1)) {
+    if (generateRandomNumber(0, 1)) {
         result1.emaChangeNegativeSellThreshold = phenotypeB.emaChangeNegativeSellThreshold;
         result2.emaChangeNegativeSellThreshold = phenotypeA.emaChangeNegativeSellThreshold;
     }
 
-    if (generateRandomNumber(1, 1)) {
+    if (generateRandomNumber(0, 1)) {
         result1.targetIncrease = phenotypeB.targetIncrease;
         result2.targetIncrease = phenotypeA.targetIncrease;
     }
 
-    if (generateRandomNumber(1, 1)) {
+    if (generateRandomNumber(0, 1)) {
         result1.stopLossThreshold = phenotypeB.stopLossThreshold;
         result2.stopLossThreshold = phenotypeA.stopLossThreshold;
     }
