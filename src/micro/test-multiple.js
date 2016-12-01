@@ -23,13 +23,14 @@ if (!investment) {
 /**
  * Settings
  */
-var symbols = ['AAPL','BAC','FB','AMZN','MSFT'];
+var symbols = ['AAPL','BAC','FB','AMZN','MSFT','QQQ'];
 var phenotypes = {
-    AAPL: {"emaLength":25,"emaChangeNegativeBuyThreshold":49,"emaChangePositiveBuyThreshold":1,"emaChangeNegativeSellThreshold":9,"targetIncrease":0.0006364},
-    // BAC: {},
-    FB: {"emaLength":2,"emaChangeNegativeBuyThreshold":14,"emaChangePositiveBuyThreshold":1,"emaChangeNegativeSellThreshold":6,"targetIncrease":0.0009523},
-    AMZN: {"emaLength":28,"emaChangeNegativeBuyThreshold":41,"emaChangePositiveBuyThreshold":1,"emaChangeNegativeSellThreshold":7,"targetIncrease":0.0008379},
-    MSFT: {"emaLength":18,"emaChangeNegativeBuyThreshold":27,"emaChangePositiveBuyThreshold":1,"emaChangeNegativeSellThreshold":7,"targetIncrease":0.000489}
+    AAPL: {"emaLength":8,"emaChangeNegativeBuyThreshold":22,"emaChangePositiveBuyThreshold":1,"emaChangeNegativeSellThreshold":4,"targetIncrease":0.0005658,"stopLossThreshold":0.43144},
+    BAC: {"emaLength":21,"emaChangeNegativeBuyThreshold":31,"emaChangePositiveBuyThreshold":1,"emaChangeNegativeSellThreshold":1,"targetIncrease":0.0008936,"stopLossThreshold":0.23103},
+    FB: {"emaLength":2,"emaChangeNegativeBuyThreshold":15,"emaChangePositiveBuyThreshold":1,"emaChangeNegativeSellThreshold":10,"targetIncrease":0.0009026,"stopLossThreshold":0.3316},
+    AMZN: {"emaLength":4,"emaChangeNegativeBuyThreshold":15,"emaChangePositiveBuyThreshold":1,"emaChangeNegativeSellThreshold":6,"targetIncrease":0.000994,"stopLossThreshold":0.38285},
+    MSFT: {"emaLength":18,"emaChangeNegativeBuyThreshold":34,"emaChangePositiveBuyThreshold":1,"emaChangeNegativeSellThreshold":3,"targetIncrease":0.0004346,"stopLossThreshold":0.48618},
+    QQQ: {"emaLength":16,"emaChangeNegativeBuyThreshold":42,"emaChangePositiveBuyThreshold":1,"emaChangeNegativeSellThreshold":1,"targetIncrease":0.0006283,"stopLossThreshold":0.25081}
 };
 
 /**
