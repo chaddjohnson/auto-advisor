@@ -34,10 +34,15 @@ function startStreaming() {
     stream.on('data', function(data) {
         Tick.create(data);
     });
+    stream.on('error', function(error) {
+        // Cancel streaming.
+        stream.abort();
+
+        // Restart streaming.
+        startStreaming();
+    });
     stream.on('close', function() {
-        setTimeout(function() {
-            // Restart streaming.
-            startStreaming();
-        }, 5000);
+        // Restart streaming.
+        startStreaming();
     });
 }
