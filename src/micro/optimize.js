@@ -300,17 +300,17 @@ function backtest(phenotype, showTrades) {
         var isDayEnd = tick.createdAt.getHours() === 14 && tick.createdAt.getMinutes() >= 58;
         var dayTradingBuyingPower = balance * 4;
         var stopLossReached = shares > 0 && tick.bidPrice <= highestBidPrice * (1 - phenotype.stopLossThreshold);
-        var recentChangeMinLastPrice = 9999;
+        var recentChangeMinBidPrice = 9999;
 
         for (i = index - (phenotype.recentChangeLength + 10); i <= index - 10 && i < tickCount; i++) {
-            if (ticks[i].lastPrice < recentChangeMinLastPrice) {
-                recentChangeMinLastPrice = ticks[i].lastPrice;
+            if (ticks[i].bidPrice < recentChangeMinBidPrice) {
+                recentChangeMinBidPrice = ticks[i].bidPrice;
             }
         }
 
-        var recentChange = tick.lastPrice / recentChangeMinLastPrice;
+        var recentChange = tick.bidPrice / recentChangeMinBidPrice;
         var recentChangeSignal = recentChange >= phenotype.minRecentChange && recentChange <= phenotype.maxRecentChange;
-        var recentRatio = tick.lastPrice / ticks[index - phenotype.recentRatioLength].lastPrice;
+        var recentRatio = tick.bidPrice / ticks[index - phenotype.recentRatioLength].bidPrice;
         var recentRatioSignal = recentRatio >= phenotype.minRecentRatio && recentChange <= phenotype.maxRecentRatio;
         var ticksSinceLastTradeEnough = ticksSinceLastTrade === 0 || ticksSinceLastTrade >= phenotype.minTicksSinceLastTrade;
 
