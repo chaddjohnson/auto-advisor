@@ -3,11 +3,9 @@
 // Libraries
 var colors = require('colors');
 var _ = require('lodash');
-var moment = require('moment');
 var async = require('async');
 var mongoose = require('mongoose');
 var GeneticAlgorithm = require('geneticalgorithm');
-var EmaIndicator = require('../../lib/indicators/ema');
 var Tick = require('../../lib/models/tick');
 
 // Get parameters.
@@ -38,6 +36,8 @@ if (!investment) {
 // State
 var population = [];
 var ticks = [];
+var tickCount = 0;
+var minVolume = 3000;
 var bestPhenotype = null;
 
 // Synchronous tasks
@@ -55,7 +55,7 @@ tasks.push(function(taskCallback) {
         symbol: symbol,
         createdAt: {
             $gte: new Date('2016-11-18T00:00:00.000Z'),
-            $lte: new Date('2016-11-29T23:59:59.000Z'),
+            $lte: new Date('2016-12-07T23:59:59.000Z'),
         }
     };
 
@@ -65,6 +65,7 @@ tasks.push(function(taskCallback) {
         }
 
         ticks = documents;
+        tickCount = documents.length;
         taskCallback();
     });
 });
@@ -74,12 +75,15 @@ tasks.push(function(taskCallback) {
     // Create an initial, randomized population.
     _.times(generateRandomNumber(1, 10), function(index) {
         population.push({
-            emaLength: generateRandomNumber(1, 30),
-            emaChangeNegativeBuyThreshold: generateRandomNumber(1, 50),
-            emaChangePositiveBuyThreshold: generateRandomNumber(1, 10),
-            emaChangeNegativeSellThreshold: generateRandomNumber(1, 10),
-            targetIncrease: generateRandomNumber(0.0000625, 0.001, 7),
-            stopLossThreshold: generateRandomNumber(0.2, 0.5, 5)
+            recentChangeLength: generateRandomNumber(20, 50),
+            recentRatioLength: generateRandomNumber(1, 10),
+            minRecentChange: generateRandomNumber(1.0005, 1.0015, 5),
+            maxRecentChange: generateRandomNumber(1.0015, 1.01, 5),
+            minRecentRatio: generateRandomNumber(1.0001, 1.0008, 5),
+            maxRecentRatio: generateRandomNumber(1.0006, 1.003, 5),
+            minTicksSinceLastTrade: generateRandomNumber(1, 200),
+            targetIncrease: generateRandomNumber(0.00007, 0.000125, 6),
+            stopLossThreshold: generateRandomNumber(0.0001, 0.001, 5)
         });
     });
 
@@ -136,33 +140,45 @@ function mutationFunction(oldPhenotype) {
 
     // Select a random property to mutate.
     var propertyMin = 0;
-    var propertyMax = 5;
+    var propertyMax = 8;
     var propertyIndex = Math.floor(Math.random() * ((propertyMax - propertyMin) + 1)) + propertyMin;
 
     // Use oldPhenotype and some random function to make a change to the phenotype.
     switch (propertyIndex) {
         case 0:
-            resultPhenotype.emaLength = generateRandomNumber(1, 30);
+            resultPhenotype.recentChangeLength = generateRandomNumber(20, 50);
             break;
 
         case 1:
-            resultPhenotype.emaChangeNegativeBuyThreshold = generateRandomNumber(1, 50);
+            resultPhenotype.recentRatioLength = generateRandomNumber(1, 10);
             break;
 
         case 2:
-            resultPhenotype.emaChangePositiveBuyThreshold = generateRandomNumber(1, 10);
+            resultPhenotype.minRecentChange = generateRandomNumber(1.0005, 1.0015, 5);
             break;
 
         case 3:
-            resultPhenotype.emaChangeNegativeSellThreshold = generateRandomNumber(1, 10);
+            resultPhenotype.maxRecentChange = generateRandomNumber(1.0015, 1.01, 5);
             break;
 
         case 4:
-            resultPhenotype.targetIncrease = generateRandomNumber(0.0000625, 0.001, 7);
+            resultPhenotype.minRecentRatio = generateRandomNumber(1.0001, 1.0008, 5);
             break;
 
         case 5:
-            resultPhenotype.stopLossThreshold = generateRandomNumber(0.2, 0.5, 5);
+            resultPhenotype.maxRecentRatio = generateRandomNumber(1.0006, 1.003, 5);
+            break;
+
+        case 6:
+            resultPhenotype.minTicksSinceLastTrade = generateRandomNumber(1, 200);
+            break;
+
+        case 7:
+            resultPhenotype.targetIncrease = generateRandomNumber(0.00007, 0.000125, 6);
+            break;
+
+        case 8:
+            resultPhenotype.stopLossThreshold = generateRandomNumber(0.0001, 0.001, 5);
             break;
     }
 
@@ -176,23 +192,38 @@ function crossoverFunction(phenotypeA, phenotypeB) {
     // Use phenotypeA and B to create phenotype result 1 and 2.
 
     if (generateRandomNumber(0, 1)) {
-        result1.emaLength = phenotypeB.emaLength;
-        result2.emaLength = phenotypeA.emaLength;
+        result1.recentChangeLength = phenotypeB.recentChangeLength;
+        result2.recentChangeLength = phenotypeA.recentChangeLength;
     }
 
     if (generateRandomNumber(0, 1)) {
-        result1.emaChangeNegativeBuyThreshold = phenotypeB.emaChangeNegativeBuyThreshold;
-        result2.emaChangeNegativeBuyThreshold = phenotypeA.emaChangeNegativeBuyThreshold;
+        result1.recentRatioLength = phenotypeB.recentRatioLength;
+        result2.recentRatioLength = phenotypeA.recentRatioLength;
     }
 
     if (generateRandomNumber(0, 1)) {
-        result1.emaChangePositiveBuyThreshold = phenotypeB.emaChangePositiveBuyThreshold;
-        result2.emaChangePositiveBuyThreshold = phenotypeA.emaChangePositiveBuyThreshold;
+        result1.minRecentChange = phenotypeB.minRecentChange;
+        result2.minRecentChange = phenotypeA.minRecentChange;
     }
 
     if (generateRandomNumber(0, 1)) {
-        result1.emaChangeNegativeSellThreshold = phenotypeB.emaChangeNegativeSellThreshold;
-        result2.emaChangeNegativeSellThreshold = phenotypeA.emaChangeNegativeSellThreshold;
+        result1.maxRecentChange = phenotypeB.maxRecentChange;
+        result2.maxRecentChange = phenotypeA.maxRecentChange;
+    }
+
+    if (generateRandomNumber(0, 1)) {
+        result1.minRecentRatio = phenotypeB.minRecentRatio;
+        result2.minRecentRatio = phenotypeA.minRecentRatio;
+    }
+
+    if (generateRandomNumber(0, 1)) {
+        result1.maxRecentRatio = phenotypeB.maxRecentRatio;
+        result2.maxRecentRatio = phenotypeA.maxRecentRatio;
+    }
+
+    if (generateRandomNumber(0, 1)) {
+        result1.minTicksSinceLastTrade = phenotypeB.minTicksSinceLastTrade;
+        result2.minTicksSinceLastTrade = phenotypeA.minTicksSinceLastTrade;
     }
 
     if (generateRandomNumber(0, 1)) {
@@ -249,74 +280,73 @@ function fitnessFunction(phenotype) {
 function backtest(phenotype, showTrades) {
     showTrades = showTrades || false;
 
-    var accountValue = 0;
     var commission = 4.95;
     var balance = investment;
     var startingBalance = balance;
     var previousBalance = balance;
+    var previousCumulativeVolume = 0;
     var tradeCount = 0;
     var loss = 0;
-    var cumulativeTicks = [];
-    var previousEma = 0;
-    var emaChange = 0;
-    var emaChangeNegativeCount = 0;
-    var emaChangePositiveCount = 0;
-    var recentEmaChangeNegativeCount = 0;
     var shares = 0;
     var targetSellPrice = 0;
     var averagePrice = 0;
+    var costBasis = 0;
+    var boughtAt = null;
+    var ticksSinceLastTrade = 0;
+    var buying = false;
+    var i = 0;
 
-    // Set up indicators.
-    var emaIndicator = new EmaIndicator({length: phenotype.emaLength}, {ema: 'ema'});
-    var emaIndicatorValues = null;
-
-    ticks.forEach(function(tick) {
-        var justBought = false;
-        var isTooLateToTrade = new Date(tick.createdAt).getHours() === 14 && new Date(tick.createdAt).getMinutes() >= 56;
-        var isDayEnd = new Date(tick.createdAt).getHours() === 14 && new Date(tick.createdAt).getMinutes() >= 58;
-        var dayTradingBuyingPower = balance * 4;
-        var stopLossReached = false;
-
-        cumulativeTicks.push(tick);
-
-        emaIndicator.setData(cumulativeTicks);
-        emaIndicatorValues = emaIndicator.tick();
-
-        if (!previousEma) {
-            previousEma = emaIndicatorValues.ema;
+    ticks.forEach(function(tick, index) {
+        if (index - 10 < Math.max(phenotype.recentChangeLength, phenotype.recentRatioLength)) {
             return;
         }
 
-        stopLossReached = shares > 0 && emaIndicatorValues.ema <= averagePrice * (1 - (phenotype.stopLossThreshold / 100));
+        var volume = tick.cumulativeVolume - previousCumulativeVolume;
+        var justBought = false;
+        var isTooLateToTrade = tick.createdAt.getHours() === 14 && tick.createdAt.getMinutes() >= 56;
+        var isDayEnd = tick.createdAt.getHours() === 14 && tick.createdAt.getMinutes() >= 58;
+        var dayTradingBuyingPower = balance * 4;
+        var stopLossReached = shares > 0 && tick.bidPrice <= averagePrice * (1 - phenotype.stopLossThreshold);
 
-        emaChange = emaIndicatorValues.ema - previousEma;
+        var recentChangeMinLastPrice = 9999;
 
-        if (emaChange < 0) {
-            emaChangeNegativeCount++;
-            emaChangePositiveCount = 0;
+        for (i = index - (phenotype.recentChangeLength + 10); i <= index - 10 && i < tickCount; i++) {
+            if (ticks[i].lastPrice < recentChangeMinLastPrice) {
+                recentChangeMinLastPrice = ticks[i].lastPrice;
+            }
         }
-        else {
-            recentEmaChangeNegativeCount = emaChangeNegativeCount;
-            emaChangeNegativeCount = 0;
-            emaChangePositiveCount++;
-        }
 
-        // Buy if no position and >= n EMA change negatives followed by m change positives.
-        if (shares === 0 && !isTooLateToTrade && recentEmaChangeNegativeCount >= phenotype.emaChangeNegativeBuyThreshold && emaChangePositiveCount >= phenotype.emaChangePositiveBuyThreshold) {
+        var recentChange = tick.lastPrice / recentChangeMinLastPrice;
+        var recentChangeSignal = recentChange >= phenotype.minRecentChange && recentChange <= phenotype.maxRecentChange;
+        var recentRatio = tick.lastPrice / ticks[index - phenotype.recentRatioLength].lastPrice;
+        var recentRatioSignal = recentRatio >= phenotype.minRecentRatio && recentChange <= phenotype.maxRecentRatio;
+        var ticksSinceLastTradeEnough = ticksSinceLastTrade === 0 || ticksSinceLastTrade >= phenotype.minTicksSinceLastTrade;
+
+        if (buying && volume >= minVolume) {
             shares = Math.floor((dayTradingBuyingPower - commission) / tick.askPrice);
             balance -= ((shares * tick.askPrice) + commission);
             targetSellPrice = tick.askPrice * (1 + phenotype.targetIncrease);
             averagePrice = tick.askPrice;
+            costBasis = (tick.askPrice * Math.floor((dayTradingBuyingPower - commission) / tick.askPrice)) + commission;
+            boughtAt = tick.createdAt;
             justBought = true;
+            buying = false;
 
             if (showTrades) {
-                console.log('BOUGHT ' + shares + ' shares of ' + symbol + ' at ' +  moment(tick.createdAt).format('YYYY-MM-DD HH:mm:ss') + ' for ' + ((shares * tick.askPrice + commission)) + ' price ' + tick.askPrice + ' target ' + targetSellPrice);
+                console.log('BOUGHT ' + shares + ' shares of ' + symbol + ' at ' +  tick.createdAt.toISOString() + ' for ' + ((shares * tick.askPrice + commission)) + ' price ' + tick.askPrice + ' target ' + targetSellPrice.toFixed(4));
             }
         }
 
-        if (!justBought && shares > 0 && ((targetSellPrice && tick.bidPrice >= targetSellPrice) || stopLossReached || isDayEnd)) {
+        if (shares === 0 && !isTooLateToTrade && recentChangeSignal && recentRatioSignal && ticksSinceLastTradeEnough) {
+            buying = true;
+        }
+
+        if (!buying && !justBought && shares > 0 && ((targetSellPrice && tick.bidPrice >= targetSellPrice) || stopLossReached || isDayEnd) && volume >= minVolume && tick.createdAt.getTime() - boughtAt.getTime() >= 1000 * 3) {
+            let grossProfit = (tick.bidPrice * shares) - commission;
+            let netProfit = grossProfit - costBasis;
+
             if (showTrades) {
-                console.log('SOLD ' + shares + ' shares of ' + symbol + ' at ' +  moment(tick.createdAt).format('YYYY-MM-DD HH:mm:ss') + ' for ' + ((shares * tick.bidPrice - commission)) + ' price ' + tick.bidPrice);
+                console.log('SOLD ' + shares + ' shares of ' + symbol + ' at ' +  tick.createdAt.toISOString() + ' for gross ' + grossProfit.toFixed(2) + ' net ' + netProfit.toFixed(2) + ' price ' + tick.bidPrice);
                 console.log();
             }
 
@@ -324,7 +354,9 @@ function backtest(phenotype, showTrades) {
             shares = 0;
             targetSellPrice = 0;
             averagePrice = 0;
+            costBasis = 0;
             tradeCount++;
+            ticksSinceLastTrade = 0;
 
             if (balance < previousBalance) {
                 loss += previousBalance - balance;
@@ -333,7 +365,8 @@ function backtest(phenotype, showTrades) {
             previousBalance = balance;
         }
 
-        previousEma = emaIndicatorValues.ema;
+        previousCumulativeVolume = tick.cumulativeVolume;
+        ticksSinceLastTrade++;
     });
 
     if (showTrades) {
