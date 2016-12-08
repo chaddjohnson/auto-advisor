@@ -55,7 +55,7 @@ tasks.push(function(taskCallback) {
         symbol: symbol,
         createdAt: {
             $gte: new Date('2016-11-18T00:00:00.000Z'),
-            $lte: new Date('2016-12-07T23:59:59.000Z'),
+            $lte: new Date('2016-12-05T23:59:59.000Z'),
         }
     };
 
@@ -82,7 +82,6 @@ tasks.push(function(taskCallback) {
             minRecentRatio: generateRandomNumber(1.0001, 1.0008, 5),
             maxRecentRatio: generateRandomNumber(1.0006, 1.003, 5),
             minTicksSinceLastTrade: generateRandomNumber(1, 200),
-            targetIncrease: generateRandomNumber(0.00007, 0.000125, 6),
             stopLossThreshold: generateRandomNumber(0.0001, 0.001, 5)
         });
     });
@@ -140,7 +139,7 @@ function mutationFunction(oldPhenotype) {
 
     // Select a random property to mutate.
     var propertyMin = 0;
-    var propertyMax = 8;
+    var propertyMax = 7;
     var propertyIndex = Math.floor(Math.random() * ((propertyMax - propertyMin) + 1)) + propertyMin;
 
     // Use oldPhenotype and some random function to make a change to the phenotype.
@@ -174,10 +173,6 @@ function mutationFunction(oldPhenotype) {
             break;
 
         case 7:
-            resultPhenotype.targetIncrease = generateRandomNumber(0.00007, 0.000125, 6);
-            break;
-
-        case 8:
             resultPhenotype.stopLossThreshold = generateRandomNumber(0.0001, 0.001, 5);
             break;
     }
@@ -224,11 +219,6 @@ function crossoverFunction(phenotypeA, phenotypeB) {
     if (generateRandomNumber(0, 1)) {
         result1.minTicksSinceLastTrade = phenotypeB.minTicksSinceLastTrade;
         result2.minTicksSinceLastTrade = phenotypeA.minTicksSinceLastTrade;
-    }
-
-    if (generateRandomNumber(0, 1)) {
-        result1.targetIncrease = phenotypeB.targetIncrease;
-        result2.targetIncrease = phenotypeA.targetIncrease;
     }
 
     if (generateRandomNumber(0, 1)) {
@@ -288,12 +278,11 @@ function backtest(phenotype, showTrades) {
     var tradeCount = 0;
     var loss = 0;
     var shares = 0;
-    var targetSellPrice = 0;
-    var averagePrice = 0;
     var costBasis = 0;
     var boughtAt = null;
     var ticksSinceLastTrade = 0;
     var buying = false;
+    var highestBidPrice = 0;
     var i = 0;
 
     ticks.forEach(function(tick, index) {
@@ -301,13 +290,16 @@ function backtest(phenotype, showTrades) {
             return;
         }
 
+        if (shares > 0 && tick.bidPrice > highestBidPrice) {
+            highestBidPrice = tick.bidPrice;
+        }
+
         var volume = tick.cumulativeVolume - previousCumulativeVolume;
         var justBought = false;
         var isTooLateToTrade = tick.createdAt.getHours() === 14 && tick.createdAt.getMinutes() >= 56;
         var isDayEnd = tick.createdAt.getHours() === 14 && tick.createdAt.getMinutes() >= 58;
         var dayTradingBuyingPower = balance * 4;
-        var stopLossReached = shares > 0 && tick.bidPrice <= averagePrice * (1 - phenotype.stopLossThreshold);
-
+        var stopLossReached = shares > 0 && tick.bidPrice <= highestBidPrice * (1 - phenotype.stopLossThreshold);
         var recentChangeMinLastPrice = 9999;
 
         for (i = index - (phenotype.recentChangeLength + 10); i <= index - 10 && i < tickCount; i++) {
@@ -325,15 +317,14 @@ function backtest(phenotype, showTrades) {
         if (buying && volume >= minVolume) {
             shares = Math.floor((dayTradingBuyingPower - commission) / tick.askPrice);
             balance -= ((shares * tick.askPrice) + commission);
-            targetSellPrice = tick.askPrice * (1 + phenotype.targetIncrease);
-            averagePrice = tick.askPrice;
             costBasis = (tick.askPrice * Math.floor((dayTradingBuyingPower - commission) / tick.askPrice)) + commission;
             boughtAt = tick.createdAt;
             justBought = true;
             buying = false;
+            highestBidPrice = tick.bidPrice;
 
             if (showTrades) {
-                console.log('BOUGHT ' + shares + ' shares of ' + symbol + ' at ' +  tick.createdAt.toISOString() + ' for ' + ((shares * tick.askPrice + commission)) + ' price ' + tick.askPrice + ' target ' + targetSellPrice.toFixed(4));
+                console.log('BOUGHT ' + shares + ' shares of ' + symbol + ' at ' +  tick.createdAt.toISOString() + ' for ' + ((shares * tick.askPrice + commission)) + ' price ' + tick.askPrice);
             }
         }
 
@@ -341,7 +332,7 @@ function backtest(phenotype, showTrades) {
             buying = true;
         }
 
-        if (!buying && !justBought && shares > 0 && ((targetSellPrice && tick.bidPrice >= targetSellPrice) || stopLossReached || isDayEnd) && volume >= minVolume && tick.createdAt.getTime() - boughtAt.getTime() >= 1000 * 3) {
+        if (!buying && !justBought && shares > 0 && (stopLossReached || isDayEnd) && volume >= minVolume && tick.createdAt.getTime() - boughtAt.getTime() >= 1000 * 3) {
             let grossProfit = (tick.bidPrice * shares) - commission;
             let netProfit = grossProfit - costBasis;
 
@@ -352,11 +343,10 @@ function backtest(phenotype, showTrades) {
 
             balance = balance + (shares * tick.bidPrice - commission);
             shares = 0;
-            targetSellPrice = 0;
-            averagePrice = 0;
             costBasis = 0;
             tradeCount++;
             ticksSinceLastTrade = 0;
+            highestBidPrice = 0;
 
             if (balance < previousBalance) {
                 loss += previousBalance - balance;
