@@ -21,13 +21,13 @@ tradingClient.getAccount().then(function(accountData) {
         console.log('Account Value:\t' + formatDollars(accountData.value));
 
         if (gainLoss > 0) {
-            console.log('Gain/loss:\t' + colors.green(formatDollars(gainLoss) + ' (' + gainLossPercentage.toFixed(2) + '%)'));
+            console.log('Gain/loss:\t' + colors.green.bold(formatDollars(gainLoss) + ' (' + gainLossPercentage.toFixed(2) + '%)'));
         }
         else if (gainLoss < 0) {
-            console.log('Gain/loss:\t' + colors.red(formatDollars(gainLoss) + ' (' + gainLossPercentage.toFixed(2) + '%)'));
+            console.log('Gain/loss:\t' + colors.red.bold(formatDollars(gainLoss) + ' (' + gainLossPercentage.toFixed(2) + '%)'));
         }
         else {
-            console.log('Gain/loss:\t' + formatDollars(gainLoss) + ' (' + gainLossPercentage.toFixed(2) + '%)');
+            console.log('Gain/loss:\t' + colors.bold(formatDollars(gainLoss) + ' (' + gainLossPercentage.toFixed(2) + '%)'));
         }
     });
 });
