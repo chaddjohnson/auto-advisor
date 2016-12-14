@@ -1,12 +1,15 @@
 'use strict';
 
 // Libraries
+var util = require('util');
 var colors = require('colors');
 var _ = require('lodash');
 var async = require('async');
 var mongoose = require('mongoose');
+var moment = require('moment');
 var GeneticAlgorithm = require('geneticalgorithm');
 var Tick = require('../../lib/models/tick');
+var BollingerBandsIndicator = require('../../lib/indicators/bollingerBands');
 
 // Get parameters.
 var argv = require('yargs').argv;
@@ -36,8 +39,7 @@ if (!investment) {
 // State
 var population = [];
 var ticks = [];
-var tickCount = 0;
-var minVolume = 3000;
+var minuteTicks = [];
 var bestPhenotype = null;
 
 // Synchronous tasks
@@ -65,24 +67,61 @@ tasks.push(function(taskCallback) {
         }
 
         ticks = documents;
-        tickCount = documents.length;
         taskCallback();
     });
 });
 
+// Group ticks into minute ticks.
+tasks.push(function(taskCallback) {
+    console.log('Grouping ticks...');
+
+    var previousMinute = -1;
+    var previousTick = null;
+    var openPrice = 0;
+    var highPrice = 0;
+    var lowPrice = 99999;
+
+    ticks.forEach(function(tick) {
+        if (tick.createdAt.getMinutes() !== previousMinute && previousMinute !== -1) {
+            minuteTicks.push({
+                open: openPrice,
+                high: highPrice,
+                low: lowPrice,
+                close: previousTick.lastPrice,
+                timestamp: new Date(moment(previousTick.createdAt).format('YYYY-MM-DD HH:mm:59'))
+            });
+
+            openPrice = 0;
+            highPrice = 0;
+            lowPrice = 99999;
+        }
+
+        if (!openPrice) {
+            openPrice = tick.lastPrice;
+        }
+        if (tick.lastPrice < lowPrice) {
+            lowPrice = tick.lastPrice;
+        }
+        if (tick.lastPrice > highPrice) {
+            highPrice = tick.lastPrice;
+        }
+
+        previousTick = JSON.parse(JSON.stringify(tick));
+        previousMinute = tick.createdAt.getMinutes();
+    });
+
+    taskCallback();
+});
+
 // Create population.
 tasks.push(function(taskCallback) {
-    // Create an initial, randomized population.
+    // // Create an initial, randomized population.
     _.times(generateRandomNumber(1, 10), function(index) {
         population.push({
-            recentChangeLength: generateRandomNumber(20, 50),
-            recentRatioLength: generateRandomNumber(1, 10),
-            minRecentChange: generateRandomNumber(1.0005, 1.0015, 5),
-            maxRecentChange: generateRandomNumber(1.0015, 1.01, 5),
-            minRecentRatio: generateRandomNumber(1.0001, 1.0008, 5),
-            maxRecentRatio: generateRandomNumber(1.0006, 1.003, 5),
-            minTicksSinceLastTrade: generateRandomNumber(1, 200),
-            stopLossThreshold: generateRandomNumber(0.0001, 0.001, 5)
+            bollingerBandsLength: generateRandomNumber(10, 30),
+            bollingerBandsStandardDeviation: generateRandomNumber(1.0, 3.0, 2),
+            targetProfitPercentage: generateRandomNumber(1.001, 1.007, 5),
+            stopLossPercentage: generateRandomNumber(0.995, 0.99999, 5)
         });
     });
 
@@ -139,41 +178,25 @@ function mutationFunction(oldPhenotype) {
 
     // Select a random property to mutate.
     var propertyMin = 0;
-    var propertyMax = 7;
+    var propertyMax = 4;
     var propertyIndex = Math.floor(Math.random() * ((propertyMax - propertyMin) + 1)) + propertyMin;
 
     // Use oldPhenotype and some random function to make a change to the phenotype.
     switch (propertyIndex) {
         case 0:
-            resultPhenotype.recentChangeLength = generateRandomNumber(20, 50);
+            resultPhenotype.bollingerBandsLength = generateRandomNumber(10, 30);
             break;
 
         case 1:
-            resultPhenotype.recentRatioLength = generateRandomNumber(1, 10);
+            resultPhenotype.bollingerBandsStandardDeviation = generateRandomNumber(1.0, 3.0, 2);
             break;
 
         case 2:
-            resultPhenotype.minRecentChange = generateRandomNumber(1.0005, 1.0015, 5);
+            resultPhenotype.targetProfitPercentage = generateRandomNumber(1.001, 1.007, 5);
             break;
 
         case 3:
-            resultPhenotype.maxRecentChange = generateRandomNumber(1.0015, 1.01, 5);
-            break;
-
-        case 4:
-            resultPhenotype.minRecentRatio = generateRandomNumber(1.0001, 1.0008, 5);
-            break;
-
-        case 5:
-            resultPhenotype.maxRecentRatio = generateRandomNumber(1.0006, 1.003, 5);
-            break;
-
-        case 6:
-            resultPhenotype.minTicksSinceLastTrade = generateRandomNumber(1, 200);
-            break;
-
-        case 7:
-            resultPhenotype.stopLossThreshold = generateRandomNumber(0.0001, 0.001, 5);
+            resultPhenotype.stopLossPercentage = generateRandomNumber(0.995, 0.99999, 5);
             break;
     }
 
@@ -187,43 +210,23 @@ function crossoverFunction(phenotypeA, phenotypeB) {
     // Use phenotypeA and B to create phenotype result 1 and 2.
 
     if (generateRandomNumber(0, 1)) {
-        result1.recentChangeLength = phenotypeB.recentChangeLength;
-        result2.recentChangeLength = phenotypeA.recentChangeLength;
+        result1.bollingerBandsLength = phenotypeB.bollingerBandsLength;
+        result2.bollingerBandsLength = phenotypeA.bollingerBandsLength;
     }
 
     if (generateRandomNumber(0, 1)) {
-        result1.recentRatioLength = phenotypeB.recentRatioLength;
-        result2.recentRatioLength = phenotypeA.recentRatioLength;
+        result1.bollingerBandsStandardDeviation = phenotypeB.bollingerBandsStandardDeviation;
+        result2.bollingerBandsStandardDeviation = phenotypeA.bollingerBandsStandardDeviation;
     }
 
     if (generateRandomNumber(0, 1)) {
-        result1.minRecentChange = phenotypeB.minRecentChange;
-        result2.minRecentChange = phenotypeA.minRecentChange;
+        result1.targetProfitPercentage = phenotypeB.targetProfitPercentage;
+        result2.targetProfitPercentage = phenotypeA.targetProfitPercentage;
     }
 
     if (generateRandomNumber(0, 1)) {
-        result1.maxRecentChange = phenotypeB.maxRecentChange;
-        result2.maxRecentChange = phenotypeA.maxRecentChange;
-    }
-
-    if (generateRandomNumber(0, 1)) {
-        result1.minRecentRatio = phenotypeB.minRecentRatio;
-        result2.minRecentRatio = phenotypeA.minRecentRatio;
-    }
-
-    if (generateRandomNumber(0, 1)) {
-        result1.maxRecentRatio = phenotypeB.maxRecentRatio;
-        result2.maxRecentRatio = phenotypeA.maxRecentRatio;
-    }
-
-    if (generateRandomNumber(0, 1)) {
-        result1.minTicksSinceLastTrade = phenotypeB.minTicksSinceLastTrade;
-        result2.minTicksSinceLastTrade = phenotypeA.minTicksSinceLastTrade;
-    }
-
-    if (generateRandomNumber(0, 1)) {
-        result1.stopLossThreshold = phenotypeB.stopLossThreshold;
-        result2.stopLossThreshold = phenotypeA.stopLossThreshold;
+        result1.stopLossPercentage = phenotypeB.stopLossPercentage;
+        result2.stopLossPercentage = phenotypeA.stopLossPercentage;
     }
 
     return [result1, result2];
@@ -274,79 +277,85 @@ function backtest(phenotype, showTrades) {
     var balance = investment;
     var startingBalance = balance;
     var previousBalance = balance;
-    var previousCumulativeVolume = 0;
     var tradeCount = 0;
     var loss = 0;
     var shares = 0;
     var costBasis = 0;
-    var boughtAt = null;
-    var ticksSinceLastTrade = 0;
-    var buying = false;
-    var highestBidPrice = 0;
-    var i = 0;
+    var averagePrice = 0;
+    var previousTick = null;
+    var previousBollingerBandsValues = null;
+    var cumulativeTicks = [];
+    var cumulativeTickCount = 0;
+    var bollingerBandsIndicator = new BollingerBandsIndicator(
+        {
+            length: phenotype.bollingerBandsLength,
+            deviations: phenotype.bollingerBandsStandardDeviation
+        },
+        {
+            middle: 'middle',
+            upper: 'upper',
+            lower: 'lower'
+        }
+    );
 
-    ticks.forEach(function(tick, index) {
-        if (index - 10 < Math.max(phenotype.recentChangeLength, phenotype.recentRatioLength)) {
+    minuteTicks.forEach(function(tick, index) {
+        if (!previousTick) {
+            previousTick = tick;
             return;
         }
 
-        if (shares > 0 && tick.bidPrice > highestBidPrice) {
-            highestBidPrice = tick.bidPrice;
+        cumulativeTicks.push(tick);
+        cumulativeTickCount = cumulativeTicks.length;
+
+        // Enough data?
+        if (cumulativeTickCount < phenotype.bollingerBandsLength) {
+            return;
         }
 
-        var volume = tick.cumulativeVolume - previousCumulativeVolume;
-        var justBought = false;
-        var isTooLateToTrade = tick.createdAt.getHours() === 14 && tick.createdAt.getMinutes() >= 56;
-        var isDayEnd = tick.createdAt.getHours() === 14 && tick.createdAt.getMinutes() >= 58;
+        // Too much data?
+        while (cumulativeTickCount > phenotype.bollingerBandsLength) {
+            cumulativeTicks.shift();
+            cumulativeTickCount--;
+        }
+
+        bollingerBandsIndicator.setData(cumulativeTicks);
+
+        var bollingerBandsValues = bollingerBandsIndicator.tick();
         var dayTradingBuyingPower = balance * 4;
-        var stopLossReached = shares > 0 && tick.bidPrice <= highestBidPrice * (1 - phenotype.stopLossThreshold);
-        var recentChangeMinBidPrice = 9999;
+        var justBought = false;
+        var isTooLateToTrade = tick.timestamp.getHours() === 14 && tick.timestamp.getMinutes() >= 30;
+        var isDayEnd = tick.timestamp.getHours() === 14 && tick.timestamp.getMinutes() >= 58;
+        var targetProfitReached = shares > 0 && tick.close >= averagePrice * phenotype.targetProfitPercentage;
+        var stopLossReached = shares > 0 && tick.close <= averagePrice * phenotype.stopLossPercentage;
+        var lastTickRedAndClosedOutsideBollingerBand = previousBollingerBandsValues && previousTick.close < previousTick.open && previousTick.close < previousBollingerBandsValues.lower;
+        var currentTickGreenAndClosedInsideBollingerBand = tick.close > tick.open && tick.close > bollingerBandsValues.lower;
 
-        for (i = index - (phenotype.recentChangeLength + 10); i <= index - 10 && i < tickCount; i++) {
-            if (ticks[i].bidPrice < recentChangeMinBidPrice) {
-                recentChangeMinBidPrice = ticks[i].bidPrice;
-            }
-        }
-
-        var recentChange = tick.bidPrice / recentChangeMinBidPrice;
-        var recentChangeSignal = recentChange >= phenotype.minRecentChange && recentChange <= phenotype.maxRecentChange;
-        var recentRatio = tick.bidPrice / ticks[index - phenotype.recentRatioLength].bidPrice;
-        var recentRatioSignal = recentRatio >= phenotype.minRecentRatio && recentChange <= phenotype.maxRecentRatio;
-        var ticksSinceLastTradeEnough = ticksSinceLastTrade === 0 || ticksSinceLastTrade >= phenotype.minTicksSinceLastTrade;
-
-        if (buying && volume >= minVolume) {
-            shares = Math.floor((dayTradingBuyingPower - commission) / tick.askPrice);
-            balance -= ((shares * tick.askPrice) + commission);
-            costBasis = (tick.askPrice * Math.floor((dayTradingBuyingPower - commission) / tick.askPrice)) + commission;
-            boughtAt = tick.createdAt;
+        if (shares === 0 && !isTooLateToTrade && lastTickRedAndClosedOutsideBollingerBand && currentTickGreenAndClosedInsideBollingerBand) {
+            shares = Math.floor((dayTradingBuyingPower - commission) / tick.close);
+            balance -= ((shares * tick.close) + commission);
+            costBasis = (tick.close * Math.floor((dayTradingBuyingPower - commission) / tick.close)) + commission;
+            averagePrice = tick.close;
             justBought = true;
-            buying = false;
-            highestBidPrice = tick.bidPrice;
 
             if (showTrades) {
-                console.log('BOUGHT ' + shares + ' shares of ' + symbol + ' at ' +  tick.createdAt.toISOString() + ' for ' + ((shares * tick.askPrice + commission)) + ' price ' + tick.askPrice);
+                console.log('BOUGHT ' + shares + ' shares of ' + symbol + ' at ' +  tick.timestamp + ' for ' + ((shares * tick.close + commission)) + ' price ' + tick.close);
             }
         }
 
-        if (shares === 0 && !isTooLateToTrade && recentChangeSignal && recentRatioSignal && ticksSinceLastTradeEnough) {
-            buying = true;
-        }
-
-        if (!buying && !justBought && shares > 0 && (stopLossReached || isDayEnd) && volume >= minVolume && tick.createdAt.getTime() - boughtAt.getTime() >= 1000 * 3) {
-            let grossProfit = (tick.bidPrice * shares) - commission;
+        if (!justBought && shares > 0 && (targetProfitReached || stopLossReached || isDayEnd)) {
+            let grossProfit = (tick.close * shares) - commission;
             let netProfit = grossProfit - costBasis;
 
             if (showTrades) {
-                console.log('SOLD ' + shares + ' shares of ' + symbol + ' at ' +  tick.createdAt.toISOString() + ' for gross ' + grossProfit.toFixed(2) + ' net ' + netProfit.toFixed(2) + ' price ' + tick.bidPrice);
+                console.log('SOLD ' + shares + ' shares of ' + symbol + ' at ' +  tick.timestamp + ' for gross ' + grossProfit.toFixed(2) + ' net ' + netProfit.toFixed(2) + ' price ' + tick.close);
                 console.log();
             }
 
-            balance = balance + (shares * tick.bidPrice - commission);
+            balance = balance + (shares * tick.close - commission);
             shares = 0;
             costBasis = 0;
+            averagePrice = 0;
             tradeCount++;
-            ticksSinceLastTrade = 0;
-            highestBidPrice = 0;
 
             if (balance < previousBalance) {
                 loss += previousBalance - balance;
@@ -355,8 +364,8 @@ function backtest(phenotype, showTrades) {
             previousBalance = balance;
         }
 
-        previousCumulativeVolume = tick.cumulativeVolume;
-        ticksSinceLastTrade++;
+        previousTick = tick;
+        previousBollingerBandsValues = bollingerBandsValues;
     });
 
     if (showTrades) {
