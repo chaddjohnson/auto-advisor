@@ -9,13 +9,15 @@ function formatDollars(number) {
 
 tradingClient.getAccount().then(function(accountData) {
     var costBasis = 0;
+    var marketValue = 0;
 
     tradingClient.getHoldings().then(function(holdingsData) {
         _.each(holdingsData, function(holding) {
-            costBasis += parseFloat(holding.costBasis);
+            costBasis += holding.costBasis;
+            marketValue += holding.marketValue;
         });
 
-        var gainLoss = accountData.value - costBasis;
+        var gainLoss = marketValue - costBasis;
         var gainLossPercentage = (gainLoss / costBasis) * 100;
 
         console.log('Account Value:\t' + formatDollars(accountData.value));
