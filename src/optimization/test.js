@@ -15,8 +15,8 @@ var positions = [];
 var data = require('../../data/' + symbol + '.json');
 
 // AMZN
-var phenotype = {"investmentDivisor":7.46803,"sellTriggerProfitPercentage":1.98684,"stopLossThreshold":8.93799,"recentLargeChangeCounterStart":5,"minPercentChangeBuy":-5.32629,"maxPercentChangeBuy":2.0849};
-var pullOutDates = ['2016-10-27','2016-07-28','2016-04-21','2016-02-01','2015-10-22','2015-07-16','2015-04-23','2015-01-29','2014-10-16','2014-07-17'];
+var phenotype = {"investmentDivisor":4.31352,"sellTriggerProfitPercentage":1.59134,"stopLossThreshold":6.36004,"recentLargeChangeCounterStart":6,"minPercentChangeBuy":-5.26794,"maxPercentChangeBuy":2.14115};
+var pullOutDates = ['2016-10-27','2016-07-28','2016-04-21','2016-02-01','2015-10-22','2015-07-16','2015-04-23','2015-01-29','2014-10-16','2014-07-17','2014-04-16','2014-01-30','2013-10-17','2013-07-18','2013-04-18','2013-01-22','2012-10-18','2012-07-19','2012-04-12','2012-01-19'];
 
 var balance = 100000;
 var startingBalance = balance;
