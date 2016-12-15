@@ -21,6 +21,7 @@ tradingClient.getAccount().then(function(accountData) {
         var gainLossPercentage = (gainLoss / costBasis) * 100;
 
         console.log('Account Value:\t' + formatDollars(accountData.value));
+        console.log('Investment:\t' + formatDollars(costBasis));
 
         if (gainLoss > 0) {
             console.log('Gain/loss:\t' + colors.green.bold(formatDollars(gainLoss) + ' (' + gainLossPercentage.toFixed(2) + '%)'));
