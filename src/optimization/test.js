@@ -123,4 +123,6 @@ data.forEach(function(dataPoint) {
 console.log();
 console.log(JSON.stringify(phenotype));
 console.log('Account Value: ' + accountValue.toFixed(2));
-console.log('Loss: ' + loss.toFixed(2));
+console.log('Profit: ' + (accountValue - startingBalance).toFixed(2));
+//console.log('Loss: ' + loss.toFixed(2));
+
