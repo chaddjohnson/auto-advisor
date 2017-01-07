@@ -15,7 +15,7 @@ var positions = [];
 var data = require('../../data/' + symbol + '.json');
 
 // AMZN
-var phenotype = {"investmentDivisor":5.82958,"sellTriggerProfitPercentage":1.32419,"stopLossThreshold":8.78057};
+var phenotype = {"investmentDivisor":5.83481,"sellTriggerProfitPercentage":1.31727,"stopLossThreshold":8.7725};
 var pullOutDates = ["2016-10-27","2016-07-28","2016-04-28","2016-01-28","2015-10-22","2015-07-23","2015-04-23","2015-01-29","2014-10-23","2014-07-24","2014-04-24","2014-01-30","2013-10-24","2013-07-25","2013-04-25","2013-01-29","2012-10-25","2012-07-26","2012-04-26","2012-01-31"];
 
 var balance = 100000;
@@ -115,5 +115,4 @@ console.log();
 console.log(JSON.stringify(phenotype));
 console.log('Account Value: ' + accountValue.toFixed(2));
 console.log('Profit: ' + (accountValue - startingBalance).toFixed(2));
-//console.log('Loss: ' + loss.toFixed(2));
-
+console.log('Loss: ' + loss.toFixed(2));
