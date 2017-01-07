@@ -15,7 +15,7 @@ var positions = [];
 var data = require('../../data/' + symbol + '.json');
 
 // AMZN
-var phenotype = {"investmentDivisor":3.19092,"sellTriggerProfitPercentage":1.2495,"stopLossThreshold":9.0214,"recentLargeChangeCounterStart":3,"minPercentChangeBuy":-3.92403,"maxPercentChangeBuy":2.77124};
+var phenotype = {"investmentDivisor":5.82958,"sellTriggerProfitPercentage":1.32419,"stopLossThreshold":8.78057};
 var pullOutDates = ["2016-10-27","2016-07-28","2016-04-28","2016-01-28","2015-10-22","2015-07-23","2015-04-23","2015-01-29","2014-10-23","2014-07-24","2014-04-24","2014-01-30","2013-10-24","2013-07-25","2013-04-25","2013-01-29","2012-10-25","2012-07-26","2012-04-26","2012-01-31"];
 
 var balance = 100000;
@@ -25,7 +25,6 @@ var baseInvestment = startingBalance / phenotype.investmentDivisor;
 var firstBuyDate = 0;
 var daysHeld = 0;
 var index = 0;
-var recentLargeChangeCounter = 0;
 var loss = 0;
 var accountValue = 0;
 
@@ -82,33 +81,26 @@ data.forEach(function(dataPoint) {
         shareSum = 0;
     }
 
-    if (percentChange > phenotype.minPercentChangeBuy && percentChange < phenotype.maxPercentChangeBuy && !isPullOutDate) {
-        if (recentLargeChangeCounter <= 0) {
-            let position = {};
-            let investment = Math.sqrt(Math.abs(percentChange)) * baseInvestment;
+    if (!isPullOutDate) {
+        let position = {};
+        let investment = Math.sqrt(Math.abs(percentChange)) * baseInvestment;
 
-            position.shares = Math.floor(investment / dataPoint.close);
-            position.pricePerShare = dataPoint.close;
-            position.costBasis = (position.shares * position.pricePerShare) + commission;
+        position.shares = Math.floor(investment / dataPoint.close);
+        position.pricePerShare = dataPoint.close;
+        position.costBasis = (position.shares * position.pricePerShare) + commission;
 
-            // Ensure adding the position will not exceed the balance.
-            if (balance - position.costBasis > 0 && position.shares > 0) {
-                positions.push(position);
-                balance -= position.costBasis;
-                shareSum += position.shares;
+        // Ensure adding the position will not exceed the balance.
+        if (balance - position.costBasis > 0 && position.shares > 0) {
+            positions.push(position);
+            balance -= position.costBasis;
+            shareSum += position.shares;
 
-                if (!firstBuyDate) {
-                    firstBuyDate = dataPoint.date;
-                    daysHeld = 0;
-                }
-
-                console.log(symbol + '\t' + 'BUY' + '\t' + dataPoint.date + '\t' + percentChange.toFixed(2) + '\t' + position.shares + '\t$' + position.pricePerShare.toFixed(4) + '\t  $' + position.costBasis.toFixed(2) + '\t\t\t\t\t  $' + balance.toFixed(2));
+            if (!firstBuyDate) {
+                firstBuyDate = dataPoint.date;
+                daysHeld = 0;
             }
-        }
-    }
-    else {
-        if (!isPullOutDate) {
-            recentLargeChangeCounter = phenotype.recentLargeChangeCounterStart;
+
+            console.log(symbol + '\t' + 'BUY' + '\t' + dataPoint.date + '\t' + percentChange.toFixed(2) + '\t' + position.shares + '\t$' + position.pricePerShare.toFixed(4) + '\t  $' + position.costBasis.toFixed(2) + '\t\t\t\t\t  $' + balance.toFixed(2));
         }
     }
 
@@ -117,7 +109,6 @@ data.forEach(function(dataPoint) {
 
     previousPrice = dataPoint.close;
     previousDate = dataPoint.date;
-    recentLargeChangeCounter--;
 });
 
 console.log();

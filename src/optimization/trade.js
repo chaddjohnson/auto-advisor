@@ -9,7 +9,6 @@ var config = require('../../config.json');
 // Libraries
 var _ = require('lodash');
 var async = require('async');
-var request = require('request');
 var moment = require('moment');
 
 // State and data
@@ -19,8 +18,6 @@ var holdingCostBasis = 0;
 var cash = 0;
 var accountValue = 0;
 var quote = {};
-var historicalQuotes = [];
-var recentLargeChangeCounter = 0;
 var activityOccurred = false;
 
 // Set up the trading client.
@@ -74,74 +71,6 @@ tasks.push(function(taskCallback) {
     }).catch(function(error) {
         taskCallback(error);
     });
-});
-
-// Download and parse stock data from Yahoo.
-tasks.push(function(taskCallback) {
-    var now = new Date();
-    var options = {
-        url: 'http://real-chart.finance.yahoo.com/table.csv?s=' + config.symbol + '&a=0&b=01&c=' + (now.getUTCFullYear() - 1) + '&d=' + now.getUTCMonth() + '&e=' + now.getUTCDate() + '&f=' + now.getUTCFullYear() + '&g=d&ignore=.csv',
-        headers: {
-            'User-Agent': 'Mozilla/5.0 (Macintosh; Intel Mac OS X 10_11_5) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/51.0.2704.103 Safari/537.36'
-        }
-    };
-
-    request(options, function(error, response, body) {
-        if (error) {
-            return taskCallback(error);
-        }
-
-        var lines = body.toString().split('\n');
-
-        if (lines[0] !== 'Date,Open,High,Low,Close,Volume,Adj Close') {
-            return taskCallback('Bad quote data.');
-        }
-
-        // Remove the header.
-        lines.shift();
-
-        lines.forEach(function(line, index) {
-            if (line.length === 0) {
-                return;
-            }
-
-            var lineParts = line.split(',');
-
-            // For the "test" client, filter out days in the future beyond the current quote date.
-            if (config.client === 'test' && new Date(lineParts[0]) > new Date(quote.datetime)) {
-                return;
-            }
-
-            historicalQuotes.push({
-                date: lineParts[0],
-                close: parseFloat(lineParts[6])
-            });
-        });
-
-        // Track quotes in ascending order.
-        historicalQuotes.reverse();
-
-        taskCallback();
-    });
-});
-
-// Determine the number of recent large price changes.
-tasks.push(function(taskCallback) {
-    var previousHistoricalQuote = null;
-    var dayPercentChange = ((quote.lastPrice / quote.previousClosePrice) - 1) * 100;
-
-    historicalQuotes.forEach(function(historicalQuote) {
-        var historicalPercentChange = previousHistoricalQuote ? ((historicalQuote.close / previousHistoricalQuote.close) - 1) * 100 : 0;
-
-        if (historicalPercentChange <= config.minPercentChangeBuy || historicalPercentChange >= config.maxPercentChangeBuy) {
-            recentLargeChangeCounter = config.recentLargeChangeCounterStart + 1;
-        }
-
-        recentLargeChangeCounter--;
-        previousHistoricalQuote = historicalQuote;
-    });
-
-    taskCallback();
 });
 
 // Sell?
@@ -208,7 +137,7 @@ tasks.push(function(taskCallback) {
     var isPullOutDate = config.pullOutDates.indexOf(quote.datetime.match(/^\d{4}\-\d{2}\-\d{2}/)[0]) > -1;
 
     // Possibly buy if it's not a bad time to buy.
-    if (recentLargeChangeCounter <= 0 && percentChange > config.minPercentChangeBuy && percentChange < config.maxPercentChangeBuy && !isPullOutDate) {
+    if (!isPullOutDate) {
         let investment = Math.sqrt(Math.abs(percentChange)) * baseInvestment;
         let qty = Math.floor(investment / quote.lastPrice);
         let costBasis = (qty * quote.lastPrice) + config.brokerage.commission;
