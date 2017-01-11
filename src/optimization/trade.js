@@ -13,7 +13,7 @@ var moment = require('moment');
 
 // State and data
 var baseInvestment = 0;
-var holdingQty = 0;
+var holdingQuantity = 0;
 var holdingCostBasis = 0;
 var cash = 0;
 var accountValue = 0;
@@ -57,17 +57,21 @@ tasks.push(function(taskCallback) {
 
 // Request account information.
 tasks.push(function(taskCallback) {
-    tradingClient.getAccount().then(function(data) {
-        cash = data.cash;
-        accountValue = data.value;
+    tradingClient.getAccount().then(function(accountData) {
+        tradingClient.getHoldings(config.symbol).then(function(holdingData) {
+            cash = accountData.cash;
+            accountValue = accountData.value;
 
-        holdingCostBasis = data.holdingCostBasis;
-        holdingQty = data.holdingQty;
+            holdingCostBasis = holdingData.costBasis;
+            holdingQuantity = holdingData.quantity;
 
-        // Calculate baseInvestment.
-        baseInvestment = (cash + holdingCostBasis) / config.investmentDivisor;
+            // Calculate baseInvestment.
+            baseInvestment = (cash + holdingCostBasis) / config.investmentDivisor;
 
-        taskCallback();
+            taskCallback();
+        }).catch(function(error) {
+            taskCallback(error);
+        });
     }).catch(function(error) {
         taskCallback(error);
     });
@@ -75,10 +79,14 @@ tasks.push(function(taskCallback) {
 
 // Sell?
 tasks.push(function(taskCallback) {
+    if (holdingQuantity === 0) {
+        return taskCallback();
+    }
+
     var percentChange = ((quote.lastPrice / quote.previousClosePrice) - 1) * 100;
 
     // Calculate the average cost basis of the holdings.
-    var averageHoldingCostBasis = holdingCostBasis / holdingQty;
+    var averageHoldingCostBasis = holdingCostBasis / holdingQuantity;
 
     // Calculate the target sell price.
     var targetSellPrice = averageHoldingCostBasis * (1 + (config.sellTriggerProfitPercentage / 100));
@@ -95,8 +103,8 @@ tasks.push(function(taskCallback) {
     // Track cash prior to sell so that net profit can be calculated.
     var previousCash = cash;
 
-    if (holdingQty > 0 && (stopLossThresholdReached || targetSellPriceReached || isPullOutDate)) {
-        tradingClient.sell(config.symbol, holdingQty).then(function() {
+    if (holdingQuantity > 0 && (stopLossThresholdReached || targetSellPriceReached || isPullOutDate)) {
+        tradingClient.sell(config.symbol, holdingQuantity).then(function() {
             // Add a multi-second delay to let things settle.
             setTimeout(function() {
                 // Get account updates.
@@ -112,10 +120,23 @@ tasks.push(function(taskCallback) {
                     activityOccurred = true;
 
                     // Log what happened.
-                    console.log(config.symbol + '\t' + 'SELL' + '\t' + quote.datetime.match(/^\d{4}\-\d{2}\-\d{2}/)[0] + '\t' + percentChange.toFixed(2) + '%\t' + holdingQty + '\t' + formatDollars(quote.lastPrice) + '\t\t\t\t' + formatDollars(netProfit) + ' \t' + formatDollars(cash));
+                    console.log(
+                        config.symbol + '\t' +
+                        'SELL' + '\t' +
+                        quote.datetime.match(/^\d{4}\-\d{2}\-\d{2}/)[0] + '\t' +
+                        percentChange.toFixed(2) + '%\t' +
+                        holdingQuantity + '\t' +
+                        formatDollars(quote.lastPrice) + '\t\t\t\t' +
+                        formatDollars(netProfit) + ' \t' +
+                        formatDollars(cash)
+                    );
 
                     // Send an SMS.
-                    smsClient.send(config.sms.toNumber, 'Sold ' + holdingQty + ' share(s) of ' + config.symbol + ' at ~' + formatDollars(quote.lastPrice) + ' for ' + formatDollars(netProfit) + ' profit.\n\nNew balance is ' + formatDollars(cash) + '.');
+                    smsClient.send(config.sms.toNumber,
+                        'Sold ' + holdingQuantity + ' share(s) of ' + config.symbol + ' at ~' +
+                        formatDollars(quote.lastPrice) + ' for ' + formatDollars(netProfit) + ' profit.' +
+                        '\n\nNew balance is ' + formatDollars(cash)
+                    );
 
                     taskCallback();
                 });
@@ -139,8 +160,8 @@ tasks.push(function(taskCallback) {
     // Possibly buy if it's not a bad time to buy.
     if (!isPullOutDate) {
         let investment = Math.sqrt(Math.abs(percentChange)) * baseInvestment;
-        let qty = Math.floor(investment / quote.lastPrice);
-        let costBasis = (qty * quote.lastPrice) + config.brokerage.commission;
+        let quantity = Math.floor(investment / quote.lastPrice);
+        let costBasis = (quantity * quote.lastPrice) + config.brokerage.commission;
 
         // Track cash prior to sell so that net profit can be calculated.
         let previousCash = cash;
@@ -150,32 +171,61 @@ tasks.push(function(taskCallback) {
         }
 
         // Ensure adding the holding will not go beyond the maximum investment amount.
-        if (cash - costBasis > 0 && qty > 0) {
-            tradingClient.buy(config.symbol, qty).then(function() {
+        if (cash - costBasis > 0 && quantity > 0) {
+            tradingClient.buy(config.symbol, quantity).then(function() {
                 // Add a multi-second delay to let things settle.
                 setTimeout(function() {
-                    tradingClient.getAccount().then(function(data) {
-                        // Calculate the average cost basis of the holdings.
-                        var averageHoldingCostBasis = data.holdingCostBasis / data.holdingQty;
+                    // Get updated account data.
+                    tradingClient.getAccount().then(function(accountData) {
+                        // Get updated holding data for the symbol.
+                        tradingClient.getHoldings(config.symbol).then(function(holdingData) {
+                            // Calculate the average cost basis of the holdings.
+                            var averageHoldingCostBasis = holdingData.costBasis / holdingData.quantity;
 
-                        // Calculate the stop loss price.
-                        var stopLossPrice = averageHoldingCostBasis * (1 - (config.stopLossThreshold / 100));
+                            // Calculate the stop loss price.
+                            var stopLossPrice = averageHoldingCostBasis * (1 - (config.stopLossThreshold / 100));
 
-                        // Calculate the target sell price.
-                        var targetSellPrice = averageHoldingCostBasis * (1 + (config.sellTriggerProfitPercentage / 100));
+                            // Calculate the target sell price.
+                            var targetSellPrice = averageHoldingCostBasis * (1 + (config.sellTriggerProfitPercentage / 100));
 
-                        // Update the cash available.
-                        cash = data.cash;
+                            var gainLoss = holdingData.marketValue - holdingData.costBasis;
+                            var gainLossPercentage = (gainLoss / holdingData.costBasis) * 100;
 
-                        activityOccurred = true;
+                            // Update the cash available.
+                            cash = accountData.cash;
 
-                        // Log what happened.
-                        console.log(config.symbol + '\t' + 'BUY' + '\t' + quote.datetime.match(/^\d{4}\-\d{2}\-\d{2}/)[0] + '\t' + percentChange.toFixed(2) + '%\t' + qty + '\t' + formatDollars(quote.lastPrice) + '\t\t' + formatDollars(previousCash - cash) + ' \t\t\t' + formatDollars(cash));
+                            activityOccurred = true;
 
-                        // Send an SMS.
-                        smsClient.send(config.sms.toNumber, config.symbol + ' ' + changeAction + ' ' + percentChange.toFixed(2) + '% since previous close from ' + formatDollars(quote.previousClosePrice) + ' to ' + formatDollars(quote.lastPrice) + '. Bought ' + qty + ' share(s) of ' + config.symbol + ' using ' + formatDollars(previousCash - cash) + '.\n\nTarget price is ' + formatDollars(targetSellPrice) + '.\nStop loss price is ' + formatDollars(stopLossPrice) + '.\nNew balance is ' + formatDollars(cash) + '.\nAccount value is ' + formatDollars(data.value) + '.');
+                            // Log what happened.
+                            console.log(
+                                config.symbol + '\t' +
+                                'BUY' + '\t' +
+                                quote.datetime.match(/^\d{4}\-\d{2}\-\d{2}/)[0] + '\t' +
+                                percentChange.toFixed(2) + '%\t' +
+                                quantity + '\t' +
+                                formatDollars(quote.lastPrice) + '\t\t' +
+                                formatDollars(previousCash - cash) + ' \t\t\t' +
+                                formatDollars(cash)
+                            );
 
-                        taskCallback();
+                            // Send an SMS.
+                            smsClient.send(config.sms.toNumber,
+                                config.symbol + ' ' + changeAction + ' ' + percentChange.toFixed(2) +
+                                '% since previous close from ' + formatDollars(quote.previousClosePrice) +
+                                ' to ' + formatDollars(quote.lastPrice) + '. Bought ' + quantity + ' share(s) of ' +
+                                config.symbol + ' using ' + formatDollars(previousCash - cash) +
+                                '\n\nTarget price is ' + formatDollars(targetSellPrice) +
+                                '\nStop loss price is ' + formatDollars(stopLossPrice) +
+                                '\nInvestment is ' + formatDollars(holdingData.costBasis) +
+                                '\nRemaining balance is ' + formatDollars(cash) +
+                                '\nAccount value is ' + formatDollars(accountData.value) +
+                                '\nGain/loss is ' + formatDollars(gainLoss) + ' (' + gainLossPercentage.toFixed(2) + '%)'
+                            );
+
+                            taskCallback();
+                        }).catch(function(error) {
+                            taskCallback(error);
+                        });
                     }).catch(function(error) {
                         taskCallback(error);
                     });
@@ -202,6 +252,10 @@ async.series(tasks, function(error) {
 
     if (!activityOccurred) {
         // Send an SMS.
-        smsClient.send(config.sms.toNumber, 'No buy or sell activity occurred today.\n\nBalance is ' + formatDollars(cash) + '.\nAccount value is ' + formatDollars(accountValue) + '.');
+        smsClient.send(config.sms.toNumber,
+            'No buy or sell activity occurred today.' +
+            '\n\nBalance is ' + formatDollars(cash) +
+            '\nAccount value is ' + formatDollars(accountValue)
+        );
     }
 });
