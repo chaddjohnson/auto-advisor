@@ -188,8 +188,7 @@ tasks.push(function(taskCallback) {
                             // Calculate the target sell price.
                             var targetSellPrice = averageHoldingCostBasis * (1 + (config.sellTriggerProfitPercentage / 100));
 
-                            var gainLoss = holdingData.marketValue - holdingData.costBasis;
-                            var gainLossPercentage = (gainLoss / holdingData.costBasis) * 100;
+                            var gainLossPercentage = (holdingData.gainLoss / holdingData.costBasis) * 100;
 
                             // Update the cash available.
                             cash = accountData.cash;
@@ -219,7 +218,7 @@ tasks.push(function(taskCallback) {
                                 '\nInvestment is ' + formatDollars(holdingData.costBasis) +
                                 '\nRemaining balance is ' + formatDollars(cash) +
                                 '\nAccount value is ' + formatDollars(accountData.value) +
-                                '\nGain/loss is ' + formatDollars(gainLoss) + ' (' + gainLossPercentage.toFixed(2) + '%)'
+                                '\nGain/loss is ' + formatDollars(holdingData.gainLoss) + ' (' + gainLossPercentage.toFixed(2) + '%)'
                             );
 
                             taskCallback();
