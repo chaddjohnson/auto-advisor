@@ -64,8 +64,8 @@ tasks.push(function(taskCallback) {
             buyingPower = accountData.buyingPower;
             accountValue = accountData.value;
 
-            holdingCostBasis = holdingData.costBasis;
-            holdingQuantity = holdingData.quantity;
+            holdingCostBasis = holdingData.costBasis || 0;
+            holdingQuantity = holdingData.quantity || 0;
 
             // Calculate baseInvestment.
             baseInvestment = (buyingPower + holdingCostBasis) / config.investmentDivisor;
@@ -81,7 +81,7 @@ tasks.push(function(taskCallback) {
 
 // Sell?
 tasks.push(function(taskCallback) {
-    if (holdingQuantity === 0) {
+    if (!holdingQuantity) {
         return taskCallback();
     }
 
@@ -137,8 +137,7 @@ tasks.push(function(taskCallback) {
                     // Send an SMS.
                     smsClient.send(config.sms.toNumber,
                         'Sold ' + holdingQuantity + ' share(s) of ' + config.symbol + ' at ~' +
-                        formatDollars(quote.lastPrice) + ' for ' +
-                        formatDollars(netProfit) + ' profit.' +
+                        formatDollars(quote.lastPrice) + ' for ' + formatDollars(netProfit) + ' profit.' +
                         '\n\nStock buying power is ' + formatDollars(data.buyingPower) +
                         '\nAccount value is ' + formatDollars(cash)
                     );
@@ -184,6 +183,10 @@ tasks.push(function(taskCallback) {
                     tradingClient.getAccount().then(function(accountData) {
                         // Get updated holding data for the symbol.
                         tradingClient.getHoldings(config.symbol).then(function(holdingData) {
+                            if (!holdingData.quantity) {
+                                return taskCallback('Failed to buy ' + quantity + ' shares of ' + config.symbol + '.');
+                            }
+
                             // Calculate the average cost basis of the holdings.
                             var averageHoldingCostBasis = holdingData.costBasis / holdingData.quantity;
 
@@ -217,7 +220,7 @@ tasks.push(function(taskCallback) {
                             smsClient.send(config.sms.toNumber,
                                 config.symbol + ' ' + changeAction + ' ' + percentChange.toFixed(2) +
                                 '% since previous close from ' + formatDollars(quote.previousClosePrice) +
-                                ' to ' + formatDollars(quote.price) + '. Bought ' + quantity + ' share(s) of ' +
+                                ' to ' + formatDollars(quote.lastPrice) + '. Bought ' + quantity + ' share(s) of ' +
                                 config.symbol + ' using ' + formatDollars(previousBuyingPower - accountData.buyingPower) + '.' +
                                 '\n\nTarget price is ' + formatDollars(targetSellPrice) +
                                 '\nStop loss price is ' + formatDollars(stopLossPrice) +
