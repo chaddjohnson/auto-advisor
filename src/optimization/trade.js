@@ -62,8 +62,8 @@ tasks.push(function(taskCallback) {
             cash = accountData.cash;
             accountValue = accountData.value;
 
-            holdingCostBasis = holdingData.costBasis;
-            holdingQuantity = holdingData.quantity;
+            holdingCostBasis = holdingData.costBasis || 0;
+            holdingQuantity = holdingData.quantity || 0;
 
             // Calculate baseInvestment.
             baseInvestment = (cash + holdingCostBasis) / config.investmentDivisor;
@@ -79,7 +79,7 @@ tasks.push(function(taskCallback) {
 
 // Sell?
 tasks.push(function(taskCallback) {
-    if (holdingQuantity === 0) {
+    if (!holdingQuantity) {
         return taskCallback();
     }
 
@@ -179,6 +179,10 @@ tasks.push(function(taskCallback) {
                     tradingClient.getAccount().then(function(accountData) {
                         // Get updated holding data for the symbol.
                         tradingClient.getHoldings(config.symbol).then(function(holdingData) {
+                            if (!holdingData.quantity) {
+                                return taskCallback('Failed to buy ' + quantity + ' shares of ' + config.symbol + '.');
+                            }
+
                             // Calculate the average cost basis of the holdings.
                             var averageHoldingCostBasis = holdingData.costBasis / holdingData.quantity;
 
