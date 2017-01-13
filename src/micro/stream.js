@@ -1,99 +1,48 @@
 'use strict';
 
 // Config
-var config = require('../../config');
+var config = require('../../config.json');
 
 // Libraries
 var mongoose = require('mongoose');
 var OAuth = require('oauth').OAuth;
-var colors = require('colors');
-var Quote = require('./quoteModel');
+var _ = require('lodash');
+var Tick = require('../../lib/models/tick');
 
 // Settings
-var symbols = ['AMZN','AAPL','FB','MSFT'];
-
-var client = new OAuth(null, null, config.brokerage.consumerKey, config.brokerage.consumerSecret, '1.0', null, 'HMAC-SHA1');
-var request = client.get('https://stream.tradeking.com/v1/market/quotes.json?symbols=' + symbols.join(','), config.brokerage.accessToken, config.brokerage.accessSecret);
+var symbols = ['AAPL','AMZN','BAC','FB','MSFT','QQQ'];
 
 mongoose.connect('mongodb://localhost/trading');
 mongoose.connection.on('error', console.error.bind(console, 'Database connection error:'));
 
-function stream() {
-    request.on('response', function (response) {
-        var chunk = '';
-        var errorCount = 0;
-        var lastQuotes = {};
-        var lastTrades = {};
+startStreaming();
 
-        response.setEncoding('utf8');
+function startStreaming() {
+    // Set up the trading client.
+    var tradingClient = require('../../lib/tradingClients/base').factory('tradeking', config.brokerage);
 
-        response.on('data', function(data) {
-            var jsonData = null;
-            var quote = null;
-            var trade = null;
-            var newQuote = null;
+    // Stream data.
+    var stream = tradingClient.stream(symbols);
 
-            try {
-                jsonData = JSON.parse(chunk + data);
-                chunk = '';
-                errorCount = 0;
-            }
-            catch (error) {
-                chunk = data;
-                errorCount++;
-
-                if (errorCount >= 3) {
-                    chunk = '';
-                    errorCount = 0;
-                }
-            }
-
-            quote = jsonData && jsonData.quote;
-            trade = jsonData && jsonData.trade;
-
-            if (!quote && !trade) {
-                return;
-            }
-
-            if (quote && lastTrades[quote.symbol]) {
-                newQuote = new Quote({
-                    symbol: quote.symbol,
-                    bidPrice: parseFloat(quote.bid),
-                    askPrice: parseFloat(quote.ask),
-                    lastPrice: parseFloat(lastTrades[quote.symbol].last),
-                    timestamp: quote.timestamp,
-                    tradeVolume: parseInt(lastTrades[quote.symbol].vl),
-                    cumulativeVolume: parseInt(lastTrades[quote.symbol].cvol)
-                });
-
-                newQuote.save(function(error) {
-                    if (error) {
-                        console.error(error.toString().red);
-                    }
-                });
-
-                console.log(JSON.stringify(newQuote.toJSON()));
-            }
-
-            if (quote) {
-                lastQuotes[quote.symbol] = JSON.parse(JSON.stringify(quote));
-            }
-            if (trade) {
-                lastTrades[trade.symbol] = JSON.parse(JSON.stringify(trade));
-            }
-        });
+    stream.on('rawData', function(data) {
+        // Stop streaming when the market closes.
+        if (new Date().getHours() >= 15) {
+            process.exit();
+        }
+        console.log(data);
     });
-    request.on('error', function(error) {
-        console.error(error);
+    stream.on('data', function(data) {
+        Tick.create(data);
     });
-    request.on('close', function() {
-        console.error('Connection closed');
+    stream.on('error', function(error) {
+        // Cancel streaming.
+        stream.abort();
 
         // Restart streaming.
-        setTimeout(stream, 1000);
+        startStreaming();
     });
-    request.end();
+    stream.on('close', function() {
+        // Restart streaming.
+        startStreaming();
+    });
 }
-
-// Start streaming.
-stream();

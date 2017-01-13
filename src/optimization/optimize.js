@@ -35,15 +35,14 @@ var data = require(filePath);
 // Population for the algorithm.
 var population = [];
 
+console.log('Optimizing for ' + symbol);
+
 // Create an initial, randomized population.
 _.times(generateRandomNumber(1, 10), function(index) {
     population.push({
         investmentDivisor: generateRandomNumber(3.0, 20.0, 5),
         sellTriggerProfitPercentage: generateRandomNumber(0.05, 2.0, 5),
-        stopLossThreshold: generateRandomNumber(0.05, 10.0, 5),
-        recentLargeChangeCounterStart: generateRandomNumber(1, 10),
-        minPercentChangeBuy: generateRandomNumber(-10, 0, 5),
-        maxPercentChangeBuy: generateRandomNumber(0, 10, 5)
+        stopLossThreshold: generateRandomNumber(0.05, 10.0, 5)
     });
 });
 
@@ -56,8 +55,6 @@ var geneticAlgorithm = GeneticAlgorithm({
     population: population,
     populationSize: populationSize
 });
-
-console.log('Optimizing for ' + symbol);
 
 // Run the algorithm.
 _.times(evolutionCount, function(index) {
@@ -81,7 +78,7 @@ function mutationFunction(oldPhenotype) {
 
     // Select a random property to mutate.
     var propertyMin = 0;
-    var propertyMax = 5;
+    var propertyMax = 2;
     var propertyIndex = Math.floor(Math.random() * ((propertyMax - propertyMin) + 1)) + propertyMin;
 
     // Use oldPhenotype and some random function to make a change to the phenotype.
@@ -96,18 +93,6 @@ function mutationFunction(oldPhenotype) {
 
         case 2:
             resultPhenotype.stopLossThreshold = generateRandomNumber(0.05, 10.0, 5);
-            break;
-
-        case 3:
-            resultPhenotype.recentLargeChangeCounterStart = generateRandomNumber(1, 10);
-            break;
-
-        case 4:
-            resultPhenotype.minPercentChangeBuy = generateRandomNumber(-10, 0, 5);
-            break;
-
-        case 5:
-            resultPhenotype.maxPercentChangeBuy = generateRandomNumber(0, 10, 5);
             break;
     }
 
@@ -133,21 +118,6 @@ function crossoverFunction(phenotypeA, phenotypeB) {
     if (generateRandomNumber(0, 1)) {
         result1.stopLossThreshold = phenotypeB.stopLossThreshold;
         result2.stopLossThreshold = phenotypeA.stopLossThreshold;
-    }
-
-    if (generateRandomNumber(0, 1)) {
-        result1.recentLargeChangeCounterStart = phenotypeB.recentLargeChangeCounterStart;
-        result2.recentLargeChangeCounterStart = phenotypeA.recentLargeChangeCounterStart;
-    }
-
-    if (generateRandomNumber(0, 1)) {
-        result1.minPercentChangeBuy = phenotypeB.minPercentChangeBuy;
-        result2.minPercentChangeBuy = phenotypeA.minPercentChangeBuy;
-    }
-
-    if (generateRandomNumber(0, 1)) {
-        result1.maxPercentChangeBuy = phenotypeB.maxPercentChangeBuy;
-        result2.maxPercentChangeBuy = phenotypeA.maxPercentChangeBuy;
     }
 
     return [result1, result2];
@@ -178,12 +148,7 @@ function fitnessFunction(phenotype) {
 // }
 
 function backtest(phenotype) {
-    // AMZN
-    // var pullOutDates = ['2016-10-27','2016-07-28','2016-04-28','2016-01-28','2015-10-22','2015-07-23','2015-04-23','2015-01-29','2014-10-23','2014-07-24'];
-
-    // NVDA
-    var pullOutDates = ['11/10/2016','08/11/2016','05/12/2016','02/17/2016','11/05/2015','08/06/2015'];
-
+    var pullOutDates = ['2016-10-27','2016-07-28','2016-04-28','2016-01-28','2015-10-22','2015-07-23','2015-04-23','2015-01-29','2014-10-23','2014-07-24','2014-04-24','2014-01-30','2013-10-24','2013-07-25','2013-04-25','2013-01-29','2012-10-25','2012-07-26','2012-04-26','2012-01-31'];
     var balance = 100000;
     var startingBalance = balance;
     var loss = 0;
@@ -192,7 +157,6 @@ function backtest(phenotype) {
     var positions = [];
     var previousPrice = 0;
     var previousDate = 0;
-    var recentLargeChangeCounter = 0;
     var accountValue = 0;
     var firstBuyDate = 0;
     var totalDaysHeld = 0;
@@ -237,30 +201,23 @@ function backtest(phenotype) {
             }
         }
 
-        if (percentChange > phenotype.minPercentChangeBuy && percentChange < phenotype.maxPercentChangeBuy && !isPullOutDate) {
-            if (recentLargeChangeCounter <= 0) {
-                let position = {};
-                let investment = Math.sqrt(Math.abs(percentChange)) * baseInvestment;
+        if (!isPullOutDate) {
+            let position = {};
+            let investment = Math.sqrt(Math.abs(percentChange)) * baseInvestment;
 
-                position.shares = Math.floor(investment / dataPoint.close);
-                position.pricePerShare = dataPoint.close;
-                position.costBasis = (position.shares * position.pricePerShare) + commission;
+            position.shares = Math.floor(investment / dataPoint.close);
+            position.pricePerShare = dataPoint.close;
+            position.costBasis = (position.shares * position.pricePerShare) + commission;
 
-                // Ensure adding the position will not exceed the balance.
-                if (balance - position.costBasis > 0 && position.shares > 0) {
-                    positions.push(position);
-                    balance -= position.costBasis;
-                    shareSum += position.shares;
+            // Ensure adding the position will not exceed the balance.
+            if (balance - position.costBasis > 0 && position.shares > 0) {
+                positions.push(position);
+                balance -= position.costBasis;
+                shareSum += position.shares;
 
-                    if (!firstBuyDate) {
-                        firstBuyDate = dataPoint.date;
-                    }
+                if (!firstBuyDate) {
+                    firstBuyDate = dataPoint.date;
                 }
-            }
-        }
-        else {
-            if (!isPullOutDate) {
-                recentLargeChangeCounter = phenotype.recentLargeChangeCounterStart;
             }
         }
 
@@ -269,7 +226,6 @@ function backtest(phenotype) {
 
         previousPrice = dataPoint.close;
         previousDate = dataPoint.date;
-        recentLargeChangeCounter--;
     });
 
     return {

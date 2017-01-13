@@ -15,12 +15,8 @@ var positions = [];
 var data = require('../../data/' + symbol + '.json');
 
 // AMZN
-// var phenotype = {"investmentDivisor":3.35964,"sellTriggerProfitPercentage":1.64684,"stopLossThreshold":9.02052,"recentLargeChangeCounterStart":9,"minPercentChangeBuy":-7.09616,"maxPercentChangeBuy":9.75202};
-// var pullOutDates = ['2016-10-27','2016-07-28','2016-04-28','2016-01-28','2015-10-22','2015-07-23','2015-04-23','2015-01-29','2014-10-23','2014-07-24'];
-
-// NVDA
-var phenotype = {"investmentDivisor":3.02786,"sellTriggerProfitPercentage":1.93251,"stopLossThreshold":5.78535,"recentLargeChangeCounterStart":1,"minPercentChangeBuy":-3.0607,"maxPercentChangeBuy":4.17419};
-var pullOutDates = ['11/10/2016','08/11/2016','05/12/2016','02/17/2016','11/05/2015','08/06/2015'];
+var phenotype = {"investmentDivisor":5.83481,"sellTriggerProfitPercentage":1.31727,"stopLossThreshold":8.7725};
+var pullOutDates = ["2016-10-27","2016-07-28","2016-04-28","2016-01-28","2015-10-22","2015-07-23","2015-04-23","2015-01-29","2014-10-23","2014-07-24","2014-04-24","2014-01-30","2013-10-24","2013-07-25","2013-04-25","2013-01-29","2012-10-25","2012-07-26","2012-04-26","2012-01-31"];
 
 var balance = 100000;
 var startingBalance = balance;
@@ -29,7 +25,6 @@ var baseInvestment = startingBalance / phenotype.investmentDivisor;
 var firstBuyDate = 0;
 var daysHeld = 0;
 var index = 0;
-var recentLargeChangeCounter = 0;
 var loss = 0;
 var accountValue = 0;
 
@@ -86,33 +81,26 @@ data.forEach(function(dataPoint) {
         shareSum = 0;
     }
 
-    if (percentChange > phenotype.minPercentChangeBuy && percentChange < phenotype.maxPercentChangeBuy && !isPullOutDate) {
-        if (recentLargeChangeCounter <= 0) {
-            let position = {};
-            let investment = Math.sqrt(Math.abs(percentChange)) * baseInvestment;
+    if (!isPullOutDate) {
+        let position = {};
+        let investment = Math.sqrt(Math.abs(percentChange)) * baseInvestment;
 
-            position.shares = Math.floor(investment / dataPoint.close);
-            position.pricePerShare = dataPoint.close;
-            position.costBasis = (position.shares * position.pricePerShare) + commission;
+        position.shares = Math.floor(investment / dataPoint.close);
+        position.pricePerShare = dataPoint.close;
+        position.costBasis = (position.shares * position.pricePerShare) + commission;
 
-            // Ensure adding the position will not exceed the balance.
-            if (balance - position.costBasis > 0 && position.shares > 0) {
-                positions.push(position);
-                balance -= position.costBasis;
-                shareSum += position.shares;
+        // Ensure adding the position will not exceed the balance.
+        if (balance - position.costBasis > 0 && position.shares > 0) {
+            positions.push(position);
+            balance -= position.costBasis;
+            shareSum += position.shares;
 
-                if (!firstBuyDate) {
-                    firstBuyDate = dataPoint.date;
-                    daysHeld = 0;
-                }
-
-                console.log(symbol + '\t' + 'BUY' + '\t' + dataPoint.date + '\t' + percentChange.toFixed(2) + '\t' + position.shares + '\t$' + position.pricePerShare.toFixed(4) + '\t  $' + position.costBasis.toFixed(2) + '\t\t\t\t\t  $' + balance.toFixed(2));
+            if (!firstBuyDate) {
+                firstBuyDate = dataPoint.date;
+                daysHeld = 0;
             }
-        }
-    }
-    else {
-        if (!isPullOutDate) {
-            recentLargeChangeCounter = phenotype.recentLargeChangeCounterStart;
+
+            console.log(symbol + '\t' + 'BUY' + '\t' + dataPoint.date + '\t' + percentChange.toFixed(2) + '\t' + position.shares + '\t$' + position.pricePerShare.toFixed(4) + '\t  $' + position.costBasis.toFixed(2) + '\t\t\t\t\t  $' + balance.toFixed(2));
         }
     }
 
@@ -121,10 +109,10 @@ data.forEach(function(dataPoint) {
 
     previousPrice = dataPoint.close;
     previousDate = dataPoint.date;
-    recentLargeChangeCounter--;
 });
 
 console.log();
 console.log(JSON.stringify(phenotype));
 console.log('Account Value: ' + accountValue.toFixed(2));
+console.log('Profit: ' + (accountValue - startingBalance).toFixed(2));
 console.log('Loss: ' + loss.toFixed(2));

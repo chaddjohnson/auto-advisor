@@ -36,7 +36,10 @@ app.get('/quotes/:symbol', function(request, response) {
                 quotes: {
                     quote: {
                         datetime: currentQuote.date + 'T' + '19:25:00Z',
+                        bid: currentQuote.close.toString(),
+                        ask: currentQuote.close.toString(),
                         last: currentQuote.close.toString(),
+                        adv_90: '12345678',
                         pcls: previousQuote ? previousQuote.close.toString() : currentQuote.close.toString()
                     }
                 },
@@ -75,6 +78,28 @@ app.get('/accounts/:id', function(request, response) {
             },
             instrument: {
                 sym: symbol
+            },
+            error: 'Success'
+        }
+    }));
+});
+
+app.get('/accounts/:id/holdings', function(request, response) {
+    var currentQuote = quotes[quoteIndex];
+
+    response.status(200).end(JSON.stringify({
+        response: {
+            accountholdings: {
+                holding: {
+                    costbasis: holding.costbasis.toString(),
+                    qty: holding.qty.toString(),
+                    marketvalue: (holding.qty * currentQuote.close).toString(),
+                    purchaseprice: 0,
+                    gainloss: 0,
+                    instrument: {
+                        sym: symbol
+                    },
+                }
             },
             error: 'Success'
         }
