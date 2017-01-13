@@ -135,7 +135,7 @@ tasks.push(function(taskCallback) {
                     smsClient.send(config.sms.toNumber,
                         'Sold ' + holdingQuantity + ' share(s) of ' + config.symbol + ' at ~' +
                         formatDollars(quote.lastPrice) + ' for ' + formatDollars(netProfit) + ' profit.' +
-                        '\n\nNew balance is ' + formatDollars(cash)
+                        '\n\nAccount value is ' + formatDollars(cash)
                     );
 
                     taskCallback();
@@ -212,7 +212,7 @@ tasks.push(function(taskCallback) {
                                 config.symbol + ' ' + changeAction + ' ' + percentChange.toFixed(2) +
                                 '% since previous close from ' + formatDollars(quote.previousClosePrice) +
                                 ' to ' + formatDollars(quote.lastPrice) + '. Bought ' + quantity + ' share(s) of ' +
-                                config.symbol + ' using ' + formatDollars(previousCash - cash) +
+                                config.symbol + ' using ' + formatDollars(previousCash - cash) + '.' +
                                 '\n\nTarget price is ' + formatDollars(targetSellPrice) +
                                 '\nStop loss price is ' + formatDollars(stopLossPrice) +
                                 '\nInvestment is ' + formatDollars(holdingData.costBasis) +
