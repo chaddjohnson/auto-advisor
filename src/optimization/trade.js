@@ -140,7 +140,8 @@ tasks.push(function(taskCallback) {
                         formatDollars(quote.lastPrice) + ' for ' +
                         formatDollars(netProfit) + ' profit.' +
                         '\n\nStock buying power is ' + formatDollars(data.buyingPower) +
-                        '\nAccount value is ' + formatDollars(cash));
+                        '\nAccount value is ' + formatDollars(cash)
+                    );
 
                     taskCallback();
                 });
