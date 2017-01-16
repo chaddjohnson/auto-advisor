@@ -43,7 +43,7 @@ tasks.push(function(taskCallback) {
 
         // Determine if trading is happening today.
         if (process.env.NODE_ENV === 'production' && !todayIsTrading) {
-            return taskCallback('Trading is not occuring today.');
+            return taskCallback('Trading is not occurring today.');
         }
 
         // Keep track of the quote.
