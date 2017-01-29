@@ -43,7 +43,7 @@ tasks.push(function(taskCallback) {
         // Go through each earning history.
         $('.earning_history .is_hilite, .earning_history .LiteHover').each(function(index) {
             // Only worry about the last several earnings reports.
-            if (earningsDates.length >= 10) {
+            if (earningsDates.length >= 11) {
                 return;
             }
 
@@ -152,7 +152,9 @@ tasks.push(function(taskCallback) {
             previousQuote = quotes[quoteIndex + 1];
         }
         else {
-            previousQuote = quote;
+            // previousQuote = quote;
+            // quote = quotes[quoteIndex - 1];
+            previousQuote = quotes[quoteIndex + 10];
             quote = quotes[quoteIndex - 1];
         }
 
@@ -163,7 +165,7 @@ tasks.push(function(taskCallback) {
                 dayChange: ((quote.close / previousQuote.close) - 1) * 100
             });
 
-            // console.log(earningsDate, (((quote.open / previousQuote.close) - 1) * 100).toFixed(2), (((quote.close / previousQuote.close) - 1) * 100).toFixed(2));
+            console.log(earningsDate, (((quote.open / previousQuote.close) - 1) * 100).toFixed(2), (((quote.close / previousQuote.close) - 1) * 100).toFixed(2));
         }
         catch (error) {
             error = 'Error using quote.';
@@ -197,10 +199,10 @@ async.series(tasks, function(error) {
     var dayWins = 0;
 
     results.forEach(function(result) {
-        if (result.morningChange >= 0.1) {
+        if (result.morningChange >= 3.0) {
             morningWins++;
         }
-        if (result.dayChange >= 0.1) {
+        if (result.dayChange >= 3.0) {
             dayWins++;
         }
     });
