@@ -11,6 +11,7 @@ var async = require('async');
 var moment = require('moment');
 
 // State and data
+var marginFactor = 0.8;
 var baseInvestment = 0;
 var holdingQuantity = 0;
 var holdingCostBasis = 0;
@@ -66,8 +67,8 @@ tasks.push(function(taskCallback) {
             holdingCostBasis = holdingData.costBasis || 0;
             holdingQuantity = holdingData.quantity || 0;
 
-            // Calculate baseInvestment.
-            baseInvestment = (buyingPower + holdingCostBasis) / config.investmentDivisor;
+            // Calculate the base investment.
+            baseInvestment = ((buyingPower + holdingCostBasis) * marginFactor) / config.investmentDivisor;
 
             taskCallback();
         }).catch(function(error) {
@@ -116,8 +117,11 @@ tasks.push(function(taskCallback) {
                     cash = data.cash;
                     buyingPower = data.buyingPower;
 
+                    // Reset holding cost basis.
+                    holdingCostBasis = 0;
+
                     // Recalculate the base investment.
-                    baseInvestment = buyingPower / config.investmentDivisor;
+                    baseInvestment = (buyingPower * marginFactor) / config.investmentDivisor;
 
                     activityOccurred = true;
 
@@ -162,6 +166,7 @@ tasks.push(function(taskCallback) {
 
     // Possibly buy if it's not a bad time to buy.
     if (!isPullOutDate) {
+        let maxHoldingCostBasis = ((buyingPower + holdingCostBasis) * (1 - marginFactor));
         let investment = Math.sqrt(Math.abs(percentChange)) * baseInvestment;
         let quantity = Math.floor(investment / quote.lastPrice);
         let costBasis = (quantity * quote.lastPrice) + config.brokerage.commission;
@@ -169,12 +174,12 @@ tasks.push(function(taskCallback) {
         // Track cash prior to sell so that net profit can be calculated.
         let previousBuyingPower = buyingPower;
 
-        if (buyingPower - costBasis <= 0) {
+        if (buyingPower - costBasis <= maxHoldingCostBasis) {
             return taskCallback(config.symbol + ' ' + changeAction + ' ' + percentChange.toFixed(2) + '% since previous close from ' + formatDollars(quote.previousClosePrice) + ' to ' + formatDollars(quote.lastPrice) + '. Potential investment amount exceeds balance. Consider placing a manual trade.');
         }
 
         // Ensure adding the holding will not go beyond the maximum investment amount.
-        if (buyingPower - costBasis > 0 && quantity > 0) {
+        if (buyingPower - costBasis > maxHoldingCostBasis && quantity > 0) {
             tradingClient.buy(config.symbol, quantity).then(function() {
                 // Add a multi-second delay to let things settle.
                 setTimeout(function() {

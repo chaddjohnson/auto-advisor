@@ -212,7 +212,6 @@ app.post('/accounts/:id/orders', function(request, response) {
         // Add earnings to cash.
         cash += earnings;
         margin = cash + 0;
-        console.log(marginUsed);
         marginUsed = 0;
         dateMarginUsed = 0;
 
