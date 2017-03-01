@@ -166,7 +166,7 @@ tasks.push(function(taskCallback) {
 
     // Possibly buy if it's not a bad time to buy.
     if (!isPullOutDate) {
-        let maxHoldingCostBasis = ((buyingPower + holdingCostBasis) * (1 - marginFactor));
+        let maxHoldingCostBasis = ((buyingPower + holdingCostBasis) * marginFactor);
         let investment = Math.sqrt(Math.abs(percentChange)) * baseInvestment;
         let quantity = Math.floor(investment / quote.lastPrice);
         let costBasis = (quantity * quote.lastPrice) + config.brokerage.commission;
@@ -174,12 +174,14 @@ tasks.push(function(taskCallback) {
         // Track cash prior to sell so that net profit can be calculated.
         let previousBuyingPower = buyingPower;
 
-        if (buyingPower - costBasis <= maxHoldingCostBasis) {
+        // Prevent trading if this trade will cause the total holding cost basis
+        // to exceed the maximum allowed.
+        if (holdingCostBasis + costBasis > maxHoldingCostBasis) {
             return taskCallback(config.symbol + ' ' + changeAction + ' ' + percentChange.toFixed(2) + '% since previous close from ' + formatDollars(quote.previousClosePrice) + ' to ' + formatDollars(quote.lastPrice) + '. Potential investment amount exceeds balance. Consider placing a manual trade.');
         }
 
         // Ensure adding the holding will not go beyond the maximum investment amount.
-        if (buyingPower - costBasis > maxHoldingCostBasis && quantity > 0) {
+        if (holdingCostBasis + costBasis <= maxHoldingCostBasis && quantity > 0) {
             tradingClient.buy(config.symbol, quantity).then(function() {
                 // Add a multi-second delay to let things settle.
                 setTimeout(function() {
