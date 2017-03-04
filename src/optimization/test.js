@@ -9,7 +9,6 @@ if (process.argv.length < 3) {
 var symbol = process.argv[2];
 var previousPrice = 0;
 var previousDate = 0;
-var positions = [];
 
 // Data
 var data = require('../../data/' + symbol + '.json');
@@ -22,6 +21,9 @@ var balance = 100000;
 var startingBalance = balance;
 var commission = 4.95;
 var baseInvestment = startingBalance / phenotype.investmentDivisor;
+var costBasisSum = 0;
+var shareSum = 0;
+var averageCostBasis = 0;
 var firstBuyDate = 0;
 var daysHeld = 0;
 var index = 0;
@@ -42,34 +44,27 @@ data.forEach(function(dataPoint) {
     //     balance += 9500;
     // }
 
-    var costBasisSum = 0;
-    var shareSum = 0;
-
-    positions.forEach(function(position) {
-        costBasisSum += position.costBasis;
-        shareSum += position.shares;
-    });
-
     var percentChange = ((dataPoint.close / previousPrice) - 1) * 100;
-    var averagePositionCostBasis = costBasisSum / shareSum;
-    var targetSellPrice = averagePositionCostBasis * (1 + (phenotype.sellTriggerProfitPercentage / 100));
+    var targetSellPrice = averageCostBasis * (1 + (phenotype.sellTriggerProfitPercentage / 100));
     var targetSellPriceReached = dataPoint.close >= targetSellPrice;
-    var stopLossThresholdReached = dataPoint.close <= averagePositionCostBasis * (1 - (phenotype.stopLossThreshold / 100));
+    var stopLossThresholdReached = dataPoint.close <= averageCostBasis * (1 - (phenotype.stopLossThreshold / 100));
     var isPullOutDate = pullOutDates.indexOf(dataPoint.date) > -1;
 
     daysHeld = Math.round((new Date(dataPoint.date) - new Date(firstBuyDate)) / 24 / 60 / 60 / 1000);
 
-    if (positions.length === 0) {
+    if (shareSum === 0) {
         daysHeld = 0;
     }
 
-    if (positions.length && (stopLossThresholdReached || targetSellPriceReached || isPullOutDate)) {
+    if (shareSum > 0 && (stopLossThresholdReached || targetSellPriceReached || isPullOutDate)) {
         let grossProfit = (shareSum * dataPoint.close) - commission;
         let netProfit = grossProfit - costBasisSum;
 
         balance += grossProfit;
-        positions = [];
         baseInvestment = balance / phenotype.investmentDivisor;
+        costBasisSum = 0;
+        shareSum = 0;
+        averageCostBasis = 0;
         firstBuyDate = 0;
 
         if (netProfit < 0) {
@@ -91,9 +86,10 @@ data.forEach(function(dataPoint) {
 
         // Ensure adding the position will not exceed the balance.
         if (balance - position.costBasis > 0 && position.shares > 0) {
-            positions.push(position);
             balance -= position.costBasis;
+            costBasisSum += position.costBasis;
             shareSum += position.shares;
+            averageCostBasis = costBasisSum / shareSum;
 
             if (!firstBuyDate) {
                 firstBuyDate = dataPoint.date;

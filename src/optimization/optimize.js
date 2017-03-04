@@ -3,7 +3,8 @@
 // Get parameters.
 var argv = require('yargs').argv;
 var symbol = argv.symbol;
-var filePath = argv.file;
+var filePath1 = argv.file1;
+var filePath2 = argv.file2;
 var populationSize = parseInt(argv.populationSize);
 var evolutionCount = parseInt(argv.evolutionCount);
 
@@ -12,8 +13,12 @@ if (!symbol) {
     console.log('Symbol must be specified.');
     process.exit(1);
 }
-if (!filePath) {
-    console.error('No input file provided.');
+if (!filePath1) {
+    console.error('No input file 1 provided.');
+    process.exit(1);
+}
+if (!filePath2) {
+    console.error('No input file 2 provided.');
     process.exit(1);
 }
 if (!populationSize) {
@@ -30,7 +35,8 @@ var _ = require('lodash');
 var GeneticAlgorithm = require('geneticalgorithm');
 
 // Data
-var data = require(filePath);
+var data1 = require(filePath1);
+var data2 = require(filePath2);
 
 // Population for the algorithm.
 var population = [];
@@ -69,7 +75,8 @@ var bestPhenotype = geneticAlgorithm.best();
 // Show the results.
 process.stdout.write('\n');
 console.log(JSON.stringify(bestPhenotype));
-console.log(JSON.stringify(backtest(bestPhenotype)));
+console.log(JSON.stringify(backtest(bestPhenotype, data1)));
+console.log(JSON.stringify(backtest(bestPhenotype, data2)));
 process.stdout.write('\n');
 
 
@@ -124,7 +131,7 @@ function crossoverFunction(phenotypeA, phenotypeB) {
 }
 
 function fitnessFunction(phenotype) {
-    var fitness = backtest(phenotype).profit;
+    var fitness = backtest(phenotype, data1).profit;
 
     // Use phenotype and possibly some other information to determine
     // the fitness number. Higher is better, lower is worse.
@@ -147,20 +154,22 @@ function fitnessFunction(phenotype) {
 //     return true;
 // }
 
-function backtest(phenotype) {
-    var pullOutDates = ['2016-10-27','2016-07-28','2016-04-28','2016-01-28','2015-10-22','2015-07-23','2015-04-23','2015-01-29','2014-10-23','2014-07-24','2014-04-24','2014-01-30','2013-10-24','2013-07-25','2013-04-25','2013-01-29','2012-10-25','2012-07-26','2012-04-26','2012-01-31'];
+function backtest(phenotype, data) {
+    var pullOutDates = ['2017-02-02','2016-10-27','2016-07-28','2016-04-28','2016-01-28','2015-10-22','2015-07-23','2015-04-23','2015-01-29','2014-10-23','2014-07-24','2014-04-24','2014-01-30','2013-10-24','2013-07-25','2013-04-25','2013-01-29','2012-10-25','2012-07-26','2012-04-26','2012-01-31'];
     var balance = 100000;
     var startingBalance = balance;
     var loss = 0;
     var commission = 4.95;
     var baseInvestment = startingBalance / phenotype.investmentDivisor;
-    var positions = [];
     var previousPrice = 0;
     var previousDate = 0;
     var accountValue = 0;
     var firstBuyDate = 0;
     var totalDaysHeld = 0;
     var sellCount = 0;
+    var costBasisSum = 0;
+    var shareSum = 0;
+    var averageCostBasis = 0;
 
     data.forEach(function(dataPoint) {
         if (!previousPrice) {
@@ -169,29 +178,21 @@ function backtest(phenotype) {
             return;
         }
 
-        var costBasisSum = 0;
-        var shareSum = 0;
-
-        positions.forEach(function(position) {
-            costBasisSum += position.costBasis;
-            shareSum += position.shares;
-        });
-
         var percentChange = ((dataPoint.close / previousPrice) - 1) * 100;
-        var averagePositionCostBasis = costBasisSum / shareSum;
-        var targetSellPrice = averagePositionCostBasis * (1 + (phenotype.sellTriggerProfitPercentage / 100));
+        var targetSellPrice = averageCostBasis * (1 + (phenotype.sellTriggerProfitPercentage / 100));
         var targetSellPriceReached = dataPoint.close >= targetSellPrice;
-        var stopLossThresholdReached = dataPoint.close <= averagePositionCostBasis * (1 - (phenotype.stopLossThreshold / 100));
+        var stopLossThresholdReached = dataPoint.close <= averageCostBasis * (1 - (phenotype.stopLossThreshold / 100));
         var isPullOutDate = pullOutDates.indexOf(dataPoint.date) > -1;
 
-        if (positions.length && (stopLossThresholdReached || targetSellPriceReached || isPullOutDate)) {
+        if (shareSum > 0 && (stopLossThresholdReached || targetSellPriceReached || isPullOutDate)) {
             let grossProfit = (shareSum * dataPoint.close) - commission;
             let netProfit = grossProfit - costBasisSum;
 
             balance += grossProfit;
-            positions = [];
             baseInvestment = balance / phenotype.investmentDivisor;
+            costBasisSum = 0;
             shareSum = 0;
+            averageCostBasis = 0;
             totalDaysHeld += Math.round((new Date(dataPoint.date) - new Date(firstBuyDate)) / 24 / 60 / 60 / 1000);
             firstBuyDate = 0;
             sellCount++;
@@ -211,9 +212,10 @@ function backtest(phenotype) {
 
             // Ensure adding the position will not exceed the balance.
             if (balance - position.costBasis > 0 && position.shares > 0) {
-                positions.push(position);
                 balance -= position.costBasis;
+                costBasisSum += position.costBasis;
                 shareSum += position.shares;
+                averageCostBasis = costBasisSum / shareSum;
 
                 if (!firstBuyDate) {
                     firstBuyDate = dataPoint.date;
